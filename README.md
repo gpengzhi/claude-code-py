@@ -1,8 +1,6 @@
-# claude-code-py
+# Build Production-Level Claude Code in Python
 
-**Learn how to build production-level Claude Code in Python.**
-
-This is a faithful Python reimplementation of [Claude Code](https://claude.ai/code) -- Anthropic's CLI coding agent. We studied the architecture of Claude Code and rebuilt it from scratch so you can understand every system, every edge case, and every design decision that makes a production AI coding agent work.
+> A faithful Python reimplementation of [Claude Code](https://claude.ai/code) -- Anthropic's CLI coding agent. We studied the architecture of Claude Code and rebuilt it from scratch so you can understand every system, every edge case, and every design decision that makes a production AI coding agent work.
 
 ## Why This Exists
 
