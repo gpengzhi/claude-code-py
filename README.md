@@ -2,7 +2,6 @@
 
 > Production-quality open-source Claude Code in Python -- readable enough to learn from, robust enough to use.
 
-[![Tests](https://img.shields.io/badge/tests-186%20passed-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
@@ -37,7 +36,7 @@ There's a gap in the ecosystem:
 | MCP support | No | Yes (stdio + HTTP) | Yes |
 | Permission system | No | 5 modes + rules | Full |
 | Hooks | No | Pre/PostToolUse | Full |
-| Tests | None | 186 (unit + conformance) | Internal |
+| Tests | None | Unit + conformance | Internal |
 | Can you use it? | No | **Yes** | Yes |
 | Can you read it? | Yes | **Yes** | Not really |
 | Can you modify it? | Yes | **Yes** | No |
@@ -131,16 +130,12 @@ The Bash tool has **15 named security checks** ported from the TypeScript origin
 - **Extended thinking** -- `--thinking` flag enables interleaved thinking blocks
 - **API retry** with exponential backoff (3 attempts)
 
-### Conformance-Tested
+### Behavioral Parity with Claude Code
 
-89 conformance tests verify behavioral parity with the TypeScript original:
-- Tool schemas match field-by-field (names, types, required flags)
-- Behavioral tests: read-before-edit, 1-based offset, replace_all, non-unique rejection
-- Config paths, settings merge precedence, memory format, session JSONL format
-
-```bash
-pytest conformance/ -v
-```
+Tool schemas, execution patterns, and config formats match the TypeScript original:
+- Tool names and input schemas match field-by-field
+- Read-before-edit enforcement, 1-based offset, replace_all semantics
+- Config paths (`~/.claude`), settings merge precedence, session JSONL format
 
 ## Reading the Code
 
@@ -198,30 +193,9 @@ Options:
   --verbose                       Debug logging
 ```
 
-## Running Tests
-
-```bash
-# All tests
-pytest tests/ conformance/ -v
-
-# Just conformance (schema + behavioral parity)
-pytest conformance/ -v
-
-# Just unit tests
-pytest tests/ -v
-```
-
 ## Contributing
 
-Contributions welcome. The conformance test suite is the quality bar:
-
-```bash
-pytest conformance/ -v  # Must pass
-pytest tests/ -v        # Must pass
-```
-
-Areas of interest:
-- Additional conformance tests for edge cases
+Contributions welcome. Areas of interest:
 - MCP HTTP transport completion
 - Additional tool implementations
 - Performance profiling and optimization

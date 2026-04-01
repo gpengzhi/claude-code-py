@@ -40,10 +40,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=5.0.0",
-    "respx>=0.21.0",
     "ruff>=0.6.0",
     "mypy>=1.11.0",
 ]
@@ -52,21 +48,11 @@ dev = [
 claude-code-py = "claude_code.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/anthropics/claude-code-py"
-Repository = "https://github.com/anthropics/claude-code-py"
+Homepage = "https://github.com/gpengzhi/claude-code-py"
+Repository = "https://github.com/gpengzhi/claude-code-py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/claude_code"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
-markers = [
-    "unit: Unit tests",
-    "integration: Integration tests",
-    "tui: TUI tests",
-    "slow: Slow tests",
-]
 
 [tool.ruff]
 target-version = "py311"
