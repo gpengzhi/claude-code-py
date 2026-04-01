@@ -1,17 +1,11 @@
 # Build Production-Level Claude Code in Python
 
-> Production-quality open-source Claude Code in Python -- readable enough to learn from, robust enough to use.
+> We studied the architecture of Claude Code and rebuilt it in ~8,800 lines of Python so you can understand every system, every edge case, and every design decision that makes a production AI coding agent work.
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
-## What Is This?
-
-An open-source Python implementation of [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) -- Anthropic's agentic coding tool. It implements the same tools, the same agentic loop, and the same safety model as the real thing, in ~8,800 lines of readable Python.
-
-**This is not a toy.** It has real sandboxed shell execution, real file editing with encoding detection, real MCP integration, real permission scoping, and a conformance test suite proving behavioral parity with the TypeScript original.
-
-## Why Does This Exist?
+## Why This Exists
 
 Most "build your own agent" tutorials stop at the 5-line loop:
 
@@ -23,28 +17,14 @@ while True:
     messages.append(results)
 ```
 
-Real-world agents like Claude Code have 500,000+ lines on top of this loop. **What are all those lines doing?** This project answers that question -- with ~8,800 lines of working Python that you can read, run, and modify.
+Real-world agents like [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) have 500,000+ lines on top of this loop. **What are all those lines doing?**
 
-There's a gap in the ecosystem:
-
-| | [learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) | **claude-code-py** | Official Claude Code |
-|---|---|---|---|
-| Purpose | Tutorial | Learn & Use | Production tool |
-| Lines of code | ~2K | ~8.8K | ~500K |
-| Tools | 1 (bash blocklist) | 17 (conformance-tested) | 40+ |
-| Security | String-match blocklist | 15 checks + sandbox | Full sandbox |
-| MCP support | No | Yes (stdio + HTTP) | Yes |
-| Permission system | No | 5 modes + rules | Full |
-| Hooks | No | Pre/PostToolUse | Full |
-| Tests | None | Unit + conformance | Internal |
-| Can you use it? | No | **Yes** | Yes |
-| Can you read it? | Yes | **Yes** | Not really |
-| Can you modify it? | Yes | **Yes** | No |
+This project answers that question -- with ~8,800 lines of working Python that you can read, run, and modify. Every module maps to the original Claude Code architecture. Every design decision is explained in the [7-chapter tutorial](docs/tutorial/).
 
 ## Quick Start
 
 ```bash
-pip install -e ".[dev]"
+pip install -e .
 export ANTHROPIC_API_KEY=sk-ant-...
 
 # Non-interactive mode
@@ -54,88 +34,70 @@ claude-code-py -p "What files are in this directory?"
 claude-code-py
 
 # With a specific model
-claude-code-py -m claude-opus-4-20250514 -p "Review this codebase"
+claude-code-py -m claude-sonnet-4-20250514 -p "Review this codebase"
 
 # Resume a previous session
 claude-code-py --resume <session-id>
-
-# Bypass permissions (for CI/scripts)
-claude-code-py --dangerously-skip-permissions -p "Fix the failing test"
 ```
 
 ## Architecture
 
 ```
-CLI (cli.py)
- |
- +-- Settings & Config (utils/config.py)
- |     Merges: ~/.claude/settings.json < .claude/settings.json < env vars < CLI flags
- |
- +-- Context Assembly (context/)
- |     System prompt (11 sections) + CLAUDE.md + git context + memory
- |
- +-- QueryEngine (query/engine.py)
- |     Owns message history, usage tracking, abort handling
- |
- +-- Query Loop (query/loop.py)  <-- THE CORE
- |     while turn < max_turns:
- |       1. Apply tool result budget (truncate old results)
- |       2. Auto-compact if approaching context limit
- |       3. Stream model response
- |       4. Start read-only tools during streaming
- |       5. Execute remaining tools (parallel if safe, serial if not)
- |       6. Recovery: max_tokens retry, compact, budget trim
- |
- +-- Tool Execution Pipeline (tool/executor.py)
- |     Parse input -> Validate -> PreToolUse hooks -> Permissions -> Execute -> PostToolUse hooks -> Truncate
- |
- +-- 17 Built-in Tools (tools/)
- |     Bash, Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Agent,
- |     TaskCreate/Get/Update/List, EnterPlanMode, ExitPlanMode,
- |     AskUserQuestion, Skill
- |
- +-- MCP Tools (services/mcp/ + tools/mcp_tool/)
- |     Discovers and wraps MCP server tools as native tools
- |
- +-- Permissions (permissions/check.py)
- |     5 modes: default, acceptEdits, plan, bypassPermissions, dontAsk
- |     Rule matching with fnmatch wildcards
- |
- +-- Hooks (hooks/)
- |     command hooks (shell), http hooks (webhook), loaded from settings.json
- |
- +-- TUI (tui/)
-       Textual app: streaming markdown, spinner, status bar, permission dialogs, vim mode
+                          ┌─────────────┐
+                          │   CLI       │  cli.py
+                          └──────┬──────┘
+                                 │
+                    ┌────────────┼────────────┐
+                    ▼            ▼            ▼
+              ┌──────────┐ ┌─────────┐ ┌──────────┐
+              │ Settings │ │ Context │ │  Memory  │
+              │ & Config │ │ Assembly│ │          │
+              └──────────┘ └─────────┘ └──────────┘
+                    │            │            │
+                    └────────────┼────────────┘
+                                 ▼
+                    ┌────────────────────────┐
+                    │     Query Loop         │  query/loop.py
+                    │                        │  THE CORE
+                    │  while turn < max:     │
+                    │    stream response     │
+                    │    execute tools       │
+                    │    recovery paths      │
+                    └───────────┬────────────┘
+                                │
+              ┌─────────────────┼─────────────────┐
+              ▼                 ▼                 ▼
+     ┌─────────────┐  ┌─────────────────┐  ┌──────────┐
+     │  Streaming   │  │ Tool Execution  │  │   Auto   │
+     │  API Client  │  │   Pipeline      │  │ Compact  │
+     │              │  │                 │  │          │
+     │ prompt cache │  │ parse/validate  │  │ context  │
+     │ thinking     │  │ hooks/perms     │  │ budget   │
+     │ retry/cost   │  │ execute/format  │  │ recovery │
+     └─────────────┘  └────────┬────────┘  └──────────┘
+                               │
+          ┌──────────┬─────────┼─────────┬──────────┐
+          ▼          ▼         ▼         ▼          ▼
+     ┌────────┐ ┌────────┐ ┌──────┐ ┌───────┐ ┌───────┐
+     │  Bash  │ │  Read  │ │ Edit │ │ Agent │ │  MCP  │
+     │        │ │  Write │ │ Glob │ │ Skill │ │ Tools │
+     │ 15     │ │  Grep  │ │      │ │       │ │       │
+     │ checks │ │        │ │      │ │       │ │       │
+     │+sandbox│ │        │ │      │ │       │ │       │
+     └────────┘ └────────┘ └──────┘ └───────┘ └───────┘
 ```
 
-## What Makes This Production-Quality
+## What's Inside
 
-### Security (not a blocklist)
+**17 tools** matching Claude Code's tool names and schemas -- Bash (with 15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Agent, TaskCreate/Get/Update/List, EnterPlanMode, ExitPlanMode, AskUserQuestion, Skill.
 
-The Bash tool has **15 named security checks** ported from the TypeScript original:
-- Control characters, unicode whitespace, IFS injection
-- Command substitution via backticks, ANSI-C quoting
-- `/proc/*/environ` access, dangerous variable contexts
-- Brace expansion, comment-quote desync, newline injection
-- macOS/Linux sandbox support
+**Streaming API layer** -- prompt caching, extended thinking, cost tracking, retry with backoff, multi-provider support (Anthropic, Bedrock, Vertex).
 
-### Reliability
+**Context engineering** -- 11-section system prompt matching the TypeScript original, CLAUDE.md loading, git context injection, persistent memory across sessions.
 
-- **Prompt caching** -- `cache_control: ephemeral` on system prompt and last message
-- **Auto-compact** -- summarizes oldest 2/3 of messages when hitting 80% of context window
-- **max_output_tokens recovery** -- up to 3 retries with "resume mid-thought" messages
-- **Tool result budget** -- truncates old tool results when total exceeds 800K chars
-- **Streaming tool execution** -- starts read-only tools before the model finishes responding
-- **Cost threshold** -- warns at $5, hard-stops at $25 to prevent runaway agents
-- **Extended thinking** -- `--thinking` flag enables interleaved thinking blocks
-- **API retry** with exponential backoff (3 attempts)
+**Safety** -- 5 permission modes with wildcard rules, Pre/PostToolUse hooks, cost threshold ($5 warn, $25 stop), auto-compact when approaching context limits.
 
-### Behavioral Parity with Claude Code
-
-Tool schemas, execution patterns, and config formats match the TypeScript original:
-- Tool names and input schemas match field-by-field
-- Read-before-edit enforcement, 1-based offset, replace_all semantics
-- Config paths (`~/.claude`), settings merge precedence, session JSONL format
+**MCP client** -- stdio transport for Model Context Protocol servers, with tool discovery and execution.
 
 ## Reading the Code
 
@@ -156,7 +118,7 @@ Tool schemas, execution patterns, and config formats match the TypeScript origin
 **Safety & extensibility:**
 - [`permissions/check.py`](src/claude_code/permissions/check.py) -- Permission modes and rules
 - [`hooks/runner.py`](src/claude_code/hooks/runner.py) -- Hook execution
-- [`services/mcp/client.py`](src/claude_code/services/mcp/client.py) -- MCP client (stdio + HTTP)
+- [`services/mcp/client.py`](src/claude_code/services/mcp/client.py) -- MCP client
 
 ## Learn: Build It From Scratch
 
@@ -192,14 +154,3 @@ Options:
   --thinking                      Enable extended thinking
   --verbose                       Debug logging
 ```
-
-## Contributing
-
-Contributions welcome. Areas of interest:
-- MCP HTTP transport completion
-- Additional tool implementations
-- Performance profiling and optimization
-
-## License
-
-MIT
