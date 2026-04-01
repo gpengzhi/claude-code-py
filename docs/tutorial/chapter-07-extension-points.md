@@ -1,16 +1,14 @@
 # Chapter 7: Extension Points
 
-A coding agent that can only do what its authors anticipated is a dead end. This chapter covers the five main extension mechanisms: slash commands, skills, plugins, MCP servers, and auto-compact. Together, they let users and teams customize the agent without forking the codebase.
+A coding agent that can only do what its authors anticipated is a dead end. This chapter covers the main extension mechanisms: slash commands, skills, MCP servers, auto-compact, and the streaming tool executor. Together, they let users and teams customize the agent without forking the codebase.
 
 ## What You'll Learn
 
 - Slash commands: a simple registry pattern for built-in operations
 - Skills: markdown files with YAML frontmatter in .claude/skills/
-- Plugins: git repos that bundle skills, hooks, and MCP servers
-- MCP client: connecting to external tool servers via stdio and HTTP
+- MCP client: connecting to external tool servers via stdio
 - Auto-compact: extending conversations beyond the context window
-- The streaming tool executor (starting read-only tools during streaming)
-- Ideas for contributors
+- The streaming tool executor: starting read-only tools during streaming
 
 ## Slash Commands
 
@@ -154,79 +152,6 @@ register_bundled_skill({
 })
 ```
 
-## Plugins
-
-Plugins package multiple extension types into a single installable unit. A plugin is a git repository containing any combination of skills, hooks, and MCP server configurations.
-
-```
-my-plugin/
-    plugin.json              ← manifest (name, version, description)
-    skills/
-        deploy/SKILL.md      ← skills bundled with the plugin
-        lint/SKILL.md
-    hooks/
-        hooks.json           ← hook definitions
-    commands/
-        custom-cmd.md        ← legacy command format
-```
-
-The manifest file (`plugin.json`) declares the plugin's metadata and MCP servers:
-
-```json
-{
-  "name": "my-team-tools",
-  "version": "1.0.0",
-  "description": "Team-specific tools and workflows",
-  "mcpServers": {
-    "jira": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["jira-mcp-server.js"]
-    }
-  }
-}
-```
-
-Plugins are installed from git and stored in `~/.claude/plugins/`:
-
-```python
-async def install_plugin_from_git(url: str, branch: str | None = None):
-    plugins_dir = ensure_plugins_dir()
-    name = url.rstrip("/").split("/")[-1].removesuffix(".git")
-    plugin_dir = plugins_dir / name
-
-    if plugin_dir.exists():
-        # Update existing
-        proc = await asyncio.create_subprocess_exec(
-            "git", "pull", "--ff-only", cwd=str(plugin_dir), ...
-        )
-    else:
-        # Clone
-        cmd = ["git", "clone", "--depth", "1", url, str(plugin_dir)]
-        proc = await asyncio.create_subprocess_exec(*cmd, ...)
-
-    return load_plugin_from_dir(plugin_dir, source="marketplace")
-```
-
-When loaded, the plugin's components are discovered automatically:
-
-```python
-def load_plugin_from_dir(plugin_dir: Path, source="local") -> LoadedPlugin:
-    manifest = load_plugin_manifest(plugin_dir) or {}
-    plugin = LoadedPlugin(name=manifest.get("name", plugin_dir.name), ...)
-
-    if (plugin_dir / "commands").is_dir():
-        plugin.commands_path = plugin_dir / "commands"
-    if (plugin_dir / "skills").is_dir():
-        plugin.skills_path = plugin_dir / "skills"
-    if (plugin_dir / "hooks" / "hooks.json").exists():
-        plugin.hooks_config = json.loads(...)
-    if "mcpServers" in manifest:
-        plugin.mcp_servers = manifest["mcpServers"]
-
-    return plugin
-```
-
 ## MCP Client
 
 The Model Context Protocol (MCP) lets you connect external tool servers to the agent. An MCP server is a separate process (or HTTP endpoint) that exposes tools, resources, and prompts through a standardized JSON-RPC protocol.
@@ -272,13 +197,7 @@ A config looks like this:
 }
 ```
 
-Three transport types are supported:
-
-| Transport | How It Works |
-|---|---|
-| `stdio` | Spawns a subprocess, communicates via stdin/stdout |
-| `sse` | Connects to a Server-Sent Events endpoint |
-| `http` | Sends HTTP requests to a Streamable HTTP endpoint |
+The stdio transport is implemented (spawns a subprocess, communicates via stdin/stdout JSON-RPC). HTTP/SSE transports are parsed from config but not yet implemented.
 
 MCP tools get namespaced to avoid conflicts with built-in tools:
 
@@ -410,13 +329,11 @@ The agent will discover and connect to the server on next startup.
 
 The extension system is designed to grow. Here are some ideas for contributors:
 
-- **Custom tool registration**: Let plugins define new Tool subclasses, not just skills
 - **Skill chaining**: Run one skill's output as input to another
 - **Conditional skills**: Activate skills based on file patterns (the `paths` frontmatter field is parsed but not fully wired)
 - **MCP resource integration**: Expose MCP resources as context, not just tools
-- **Plugin marketplace**: A registry for discovering and installing community plugins
+- **MCP HTTP/SSE transport**: Implement the HTTP transport for remote MCP servers
 - **Hook templates**: Pre-built hooks for common workflows (lint-on-save, test-on-edit)
-- **Streaming tool executor**: Start executing read-only tools while the model is still streaming (the model often emits the tool call parameters before the stop event -- if the tool is read-only, why wait?)
 
 ## Code Reference
 
@@ -424,10 +341,9 @@ The production version of this chapter lives in:
 - [`src/claude_code/commands/registry.py`](../../src/claude_code/commands/registry.py) -- Slash command registry
 - [`src/claude_code/skills/loader.py`](../../src/claude_code/skills/loader.py) -- Skill discovery and loading
 - [`src/claude_code/skills/bundled.py`](../../src/claude_code/skills/bundled.py) -- Built-in bundled skills
-- [`src/claude_code/plugins/loader.py`](../../src/claude_code/plugins/loader.py) -- Plugin loading and installation
-- [`src/claude_code/plugins/builtin.py`](../../src/claude_code/plugins/builtin.py) -- Built-in plugin definitions
 - [`src/claude_code/services/mcp/client.py`](../../src/claude_code/services/mcp/client.py) -- MCP client connections
 - [`src/claude_code/services/mcp/types.py`](../../src/claude_code/services/mcp/types.py) -- MCP type definitions
+- [`src/claude_code/tool/streaming_executor.py`](../../src/claude_code/tool/streaming_executor.py) -- Streaming tool execution
 
 ---
 

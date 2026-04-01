@@ -310,4 +310,4 @@ The production version of this chapter lives in:
 
 ---
 
-**[← Chapter 4](chapter-04-edits-and-patches.md) | [Chapter 6: Permissions and Safety →](chapter-06-permissions-safety.md)**
+**[← Chapter 4: A Real Terminal UI](chapter-04-terminal-ui.md) | [Chapter 6: Permissions and Safety →](chapter-06-permissions-safety.md)**

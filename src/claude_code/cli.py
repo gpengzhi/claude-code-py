@@ -252,6 +252,7 @@ async def _run_print_mode(
         hooks_config=hooks_config,
         thinking=thinking,
         permission_mode=permission_mode,
+        perm_rules=perm_rules,
     )
 
     # Resume session if requested

@@ -122,32 +122,18 @@ class BashTool(Tool):
             return ToolResult(data="Error: empty command", is_error=True)
 
         cwd = str(context.cwd)
-        shell = os.environ.get("SHELL", "/bin/bash")
 
         try:
-            proc = await asyncio.create_subprocess_shell(
-                command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+            from claude_code.tools.bash_tool.sandbox import run_sandboxed
+
+            stdout, stderr, returncode = await run_sandboxed(
+                command=command,
                 cwd=cwd,
-                env={**os.environ, "TERM": "dumb"},
+                timeout=timeout_s,
+                allow_write_paths=[cwd],
             )
 
-            try:
-                stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                    proc.communicate(),
-                    timeout=timeout_s,
-                )
-            except asyncio.TimeoutError:
-                proc.kill()
-                await proc.wait()
-                return ToolResult(
-                    data=f"Command timed out after {timeout_s:.0f}s",
-                    is_error=True,
-                )
-
-            stdout = stdout_bytes.decode("utf-8", errors="replace")
-            stderr = stderr_bytes.decode("utf-8", errors="replace")
+            proc_returncode = returncode
 
             # Build output
             parts: list[str] = []
@@ -155,8 +141,8 @@ class BashTool(Tool):
                 parts.append(stdout)
             if stderr:
                 parts.append(f"(stderr): {stderr}")
-            if proc.returncode and proc.returncode != 0:
-                parts.append(f"(exit code: {proc.returncode})")
+            if proc_returncode and proc_returncode != 0:
+                parts.append(f"(exit code: {proc_returncode})")
 
             output = "\n".join(parts) if parts else "(no output)"
 
@@ -167,16 +153,16 @@ class BashTool(Tool):
             base_cmd = command.strip().split()[0] if command.strip() else ""
             non_error_exit_1 = base_cmd in ("grep", "rg", "egrep", "fgrep", "diff", "cmp")
             is_error = (
-                proc.returncode is not None
-                and proc.returncode != 0
-                and not (proc.returncode == 1 and non_error_exit_1)
+                proc_returncode is not None
+                and proc_returncode != 0
+                and not (proc_returncode == 1 and non_error_exit_1)
             )
 
             return ToolResult(data=output, is_error=is_error)
 
         except FileNotFoundError:
             return ToolResult(
-                data=f"Shell not found: {shell}",
+                data="Shell not found",
                 is_error=True,
             )
         except PermissionError as e:

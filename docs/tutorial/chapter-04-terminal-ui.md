@@ -489,4 +489,4 @@ The production version of this chapter lives in:
 
 ---
 
-**[← Chapter 3: The Agentic Loop](chapter-03-agentic-loop.md) | [Chapter 5: Configuration & Permissions →](chapter-05-configuration.md)**
+**[← Chapter 3: The Agentic Loop](chapter-03-agentic-loop.md) | [Chapter 5: Context Engineering →](chapter-05-context-engineering.md)**

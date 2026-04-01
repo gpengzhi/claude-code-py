@@ -36,6 +36,7 @@ class QueryEngine:
         permission_callback: Any | None = None,
         thinking: bool = False,
         permission_mode: str = "default",
+        perm_rules: dict | None = None,
     ) -> None:
         self.model = model
         self.system_prompt = system_prompt
@@ -58,11 +59,24 @@ class QueryEngine:
             abort_event=self.abort_event,
             permission_callback=permission_callback,
         )
-        # Set permission mode on app state
-        if permission_mode != "default":
-            from claude_code.types.permissions import ToolPermissionContext
-            app_state = self.tool_use_context.get_app_state()
-            app_state.tool_permission_context = ToolPermissionContext(mode=permission_mode)
+        # Set permission mode and rules on app state
+        from claude_code.types.permissions import ToolPermissionContext, PermissionRuleValue
+        app_state = self.tool_use_context.get_app_state()
+
+        allow_rules: list[PermissionRuleValue] = []
+        deny_rules: list[PermissionRuleValue] = []
+        if perm_rules:
+            from claude_code.permissions.check import parse_permission_rule_string
+            for rule_str in perm_rules.get("allow", []):
+                allow_rules.append(parse_permission_rule_string(rule_str))
+            for rule_str in perm_rules.get("deny", []):
+                deny_rules.append(parse_permission_rule_string(rule_str))
+
+        app_state.tool_permission_context = ToolPermissionContext(
+            mode=permission_mode,
+            always_allow_rules={"settings": allow_rules} if allow_rules else {},
+            always_deny_rules={"settings": deny_rules} if deny_rules else {},
+        )
 
     def abort(self) -> None:
         """Abort the current query."""

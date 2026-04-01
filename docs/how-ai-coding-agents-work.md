@@ -153,7 +153,7 @@ class Tool(ABC):
     async def call(self, args, context) -> ToolResult:
         ...                             # Actually do the thing
 
-    def is_read_only(self, input) -> bool:
+    def is_concurrency_safe(self, input) -> bool:
         ...                             # Can this run in parallel?
 
     def get_tool_schema(self) -> dict:

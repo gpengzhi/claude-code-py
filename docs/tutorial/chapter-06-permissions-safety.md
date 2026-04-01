@@ -36,7 +36,7 @@ Model edits based on imagination:
 
 ## Permission Modes
 
-Every tool call passes through the permission system before execution. The system supports six modes:
+Every tool call passes through the permission system before execution. The system supports five modes:
 
 | Mode | Behavior |
 |---|---|
@@ -45,7 +45,6 @@ Every tool call passes through the permission system before execution. The syste
 | `bypassPermissions` | Allow everything without asking (dangerous) |
 | `dontAsk` | Deny anything that would prompt (for non-interactive CI) |
 | `plan` | Always ask, even for reads (review-first workflow) |
-| `auto` | Use a classifier to decide (experimental) |
 
 The decision flow is a simple priority chain:
 
@@ -238,7 +237,9 @@ Each check targets a specific attack vector:
 | `PROC_ENVIRON` | /proc/*/environ access that leaks environment variables |
 | `DANGEROUS_VARIABLES` | Variables near redirections or pipes ($VAR > file) |
 | `BACKSLASH_OPERATORS` | Escaped semicolons/pipes (\\;) that hide command structure |
+| `BACKSLASH_WHITESPACE` | Backslash-space sequences that confuse argument parsing |
 | `BRACE_EXPANSION` | {a,b,c} patterns that expand to multiple commands |
+| `MID_WORD_HASH` | Hash characters inside words that may be interpreted as comments |
 | `ANSI_C_QUOTING` | $'...' that can encode hidden characters |
 | `COMMENT_QUOTE_DESYNC` | Quotes inside comments (#) that desync quote tracking |
 | `ZSH_DANGEROUS` | Zsh-specific builtins (zmodload, sysopen) that bypass restrictions |
