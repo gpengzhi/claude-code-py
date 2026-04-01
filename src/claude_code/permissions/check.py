@@ -136,6 +136,8 @@ def has_permissions_to_use_tool(
         "TaskCreate", "TaskGet", "TaskUpdate", "TaskList",
         # Mode switching and interaction (no side effects)
         "EnterPlanMode", "ExitPlanMode", "AskUserQuestion",
+        # Sub-agent and skill execution (delegates to the same permission system)
+        "Agent", "Skill",
     }
     if tool_name in AUTO_ALLOW_TOOLS:
         return PermissionAllowDecision(updated_input=tool_input)
