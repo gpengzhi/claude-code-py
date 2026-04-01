@@ -160,7 +160,7 @@ class Tool(ABC):
         ...                             # JSON schema for the API
 ```
 
-The execution pipeline for each tool call:
+The execution pipeline for each tool call (see `tool/executor.py`):
 
 ```
 tool_use block from API
@@ -171,14 +171,19 @@ tool_use block from API
     ├─ 2. Validate (tool-specific checks)
     │     File not read yet? → return "read first" error
     │
-    ├─ 3. Check permissions
+    ├─ 3. Run PreToolUse hooks
+    │     Hook blocked? → return error to model
+    │
+    ├─ 4. Check permissions
     │     User denied? → return "permission denied"
     │
-    ├─ 4. Execute (tool.call())
+    ├─ 5. Execute (tool.call())
     │     Exception? → return error to model
     │
-    └─ 5. Format result
-          Truncate if too large (30KB for Bash, 100KB for Edit)
+    ├─ 6. Run PostToolUse hooks
+    │
+    └─ 7. Format and truncate result
+          Truncate if too large (100KB default)
 ```
 
 **Why return errors to the model instead of crashing?** The model can learn from errors and try again. "File not found" leads the model to search for the correct path. "Permission denied" leads it to ask the user.
@@ -268,9 +273,9 @@ async def _run_query(self, prompt):
 
 ## Layer 6: Extension Points
 
-**Files: `hooks/`, `skills/`, `plugins/`, `commands/`**
+**Files: `hooks/`, `skills/`, `commands/`**
 
-Three ways to extend the agent:
+Two ways to extend the agent:
 
 ### Hooks (runtime guards)
 ```json
@@ -295,9 +300,6 @@ Look at the git diff, then create a commit with a clear message.
 ```
 Markdown files in `.claude/skills/` that become `/skill-name` commands.
 
-### Plugins (git repos)
-A git repository containing skills, hooks, and MCP server configs. Installed from a marketplace or local path.
-
 ---
 
 ## Design Decisions Worth Studying
@@ -316,13 +318,9 @@ A git repository containing skills, hooks, and MCP server configs. Installed fro
 
 ## What's NOT Here (and why)
 
-This is an educational reimplementation, not a production system. Intentionally omitted:
+Intentionally omitted to keep the codebase focused:
 
-- **Sandboxing**: Claude Code uses a real sandbox for Bash commands. We execute directly.
-- **MCP protocol**: The Model Context Protocol client is stubbed. A full implementation is ~2,000 lines.
-- **Prompt caching annotations**: Claude Code carefully places `cache_control` markers. We don't.
-- **Security classifiers**: Auto-mode uses a classifier to approve/deny tools. We skip this.
+- **Security classifiers**: Claude Code's auto-mode uses a classifier to approve/deny tools. We use rule-based permission modes instead.
 - **Telemetry**: No analytics or event logging.
-- **OAuth flow**: No browser-based authentication.
-
-These are important for production but would obscure the core architecture we're teaching.
+- **OAuth flow**: No browser-based authentication. API key auth only.
+- **MCP HTTP transport**: Only stdio transport is implemented. HTTP/SSE transport is not yet supported.

@@ -24,6 +24,8 @@ This project answers that question -- with ~8,800 lines of working Python that y
 ## Quick Start
 
 ```bash
+git clone https://github.com/gpengzhi/claude-code-py.git
+cd claude-code-py
 pip install -e .
 export ANTHROPIC_API_KEY=sk-ant-...
 
@@ -32,59 +34,6 @@ claude-code-py -p "What files are in this directory?"
 
 # Interactive TUI
 claude-code-py
-
-# With a specific model
-claude-code-py -m claude-sonnet-4-20250514 -p "Review this codebase"
-
-# Resume a previous session
-claude-code-py --resume <session-id>
-```
-
-## Architecture
-
-```
-                          ┌─────────────┐
-                          │   CLI       │  cli.py
-                          └──────┬──────┘
-                                 │
-                    ┌────────────┼────────────┐
-                    ▼            ▼            ▼
-              ┌──────────┐ ┌─────────┐ ┌──────────┐
-              │ Settings │ │ Context │ │  Memory  │
-              │ & Config │ │ Assembly│ │          │
-              └──────────┘ └─────────┘ └──────────┘
-                    │            │            │
-                    └────────────┼────────────┘
-                                 ▼
-                    ┌────────────────────────┐
-                    │     Query Loop         │  query/loop.py
-                    │                        │  THE CORE
-                    │  while turn < max:     │
-                    │    stream response     │
-                    │    execute tools       │
-                    │    recovery paths      │
-                    └───────────┬────────────┘
-                                │
-              ┌─────────────────┼─────────────────┐
-              ▼                 ▼                 ▼
-     ┌─────────────┐  ┌─────────────────┐  ┌──────────┐
-     │  Streaming   │  │ Tool Execution  │  │   Auto   │
-     │  API Client  │  │   Pipeline      │  │ Compact  │
-     │              │  │                 │  │          │
-     │ prompt cache │  │ parse/validate  │  │ context  │
-     │ thinking     │  │ hooks/perms     │  │ budget   │
-     │ retry/cost   │  │ execute/format  │  │ recovery │
-     └─────────────┘  └────────┬────────┘  └──────────┘
-                               │
-          ┌──────────┬─────────┼─────────┬──────────┐
-          ▼          ▼         ▼         ▼          ▼
-     ┌────────┐ ┌────────┐ ┌──────┐ ┌───────┐ ┌───────┐
-     │  Bash  │ │  Read  │ │ Edit │ │ Agent │ │  MCP  │
-     │        │ │  Write │ │ Glob │ │ Skill │ │ Tools │
-     │ 15     │ │  Grep  │ │      │ │       │ │       │
-     │ checks │ │        │ │      │ │       │ │       │
-     │+sandbox│ │        │ │      │ │       │ │       │
-     └────────┘ └────────┘ └──────┘ └───────┘ └───────┘
 ```
 
 ## What's Inside
@@ -144,7 +93,7 @@ Usage: claude-code-py [OPTIONS] [PROMPT]
 Options:
   --version                       Show version
   -p, --print                     Non-interactive print mode
-  -m, --model TEXT                Model (e.g., claude-sonnet-4-20250514)
+  -m, --model TEXT                Model to use
   --max-tokens INTEGER            Max response tokens (default: 16384)
   --max-turns INTEGER             Max agentic turns (default: 100)
   --system-prompt TEXT            Custom system prompt
