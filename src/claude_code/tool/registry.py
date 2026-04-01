@@ -6,6 +6,8 @@ Registers all built-in tools and provides lookup functions.
 
 from __future__ import annotations
 
+from typing import Any
+
 from claude_code.tool.base import Tool
 
 
@@ -25,14 +27,10 @@ def get_all_base_tools() -> list[Tool]:
     from claude_code.tools.web_fetch_tool.web_fetch_tool import WebFetchTool
     from claude_code.tools.web_search_tool.web_search_tool import WebSearchTool
     from claude_code.tools.agent_tool.agent_tool import AgentTool
-    from claude_code.tools.task_tools.task_create import TaskCreateTool
-    from claude_code.tools.task_tools.task_update import TaskUpdateTool
-    from claude_code.tools.task_tools.task_get import TaskGetTool
-    from claude_code.tools.task_tools.task_list import TaskListTool
+    from claude_code.tools.task_tools.task_tools import TaskCreateTool, TaskGetTool, TaskUpdateTool, TaskListTool
     from claude_code.tools.plan_tools.enter_plan_mode import EnterPlanModeTool
     from claude_code.tools.plan_tools.exit_plan_mode import ExitPlanModeTool
     from claude_code.tools.ask_user_question_tool.ask_user_question_tool import AskUserQuestionTool
-    from claude_code.tools.notebook_edit_tool.notebook_edit_tool import NotebookEditTool
     from claude_code.tools.skill_tool.skill_tool import SkillTool
 
     return [
@@ -54,7 +52,6 @@ def get_all_base_tools() -> list[Tool]:
         EnterPlanModeTool(),
         ExitPlanModeTool(),
         AskUserQuestionTool(),
-        NotebookEditTool(),
         SkillTool(),
     ]
 
@@ -62,6 +59,32 @@ def get_all_base_tools() -> list[Tool]:
 def get_tools() -> list[Tool]:
     """Get the filtered list of enabled tools."""
     return [t for t in get_all_base_tools() if t.is_enabled()]
+
+
+def get_tools_with_mcp(
+    mcp_connections: dict[str, Any] | None = None,
+) -> list[Tool]:
+    """Get enabled tools plus MCP-discovered tools."""
+    tools = get_tools()
+
+    if mcp_connections:
+        from claude_code.services.mcp.client import build_mcp_tool_name
+        from claude_code.tools.mcp_tool.mcp_tool import MCPTool
+
+        for conn_name, conn in mcp_connections.items():
+            for mcp_tool in conn.tools:
+                fq_name = build_mcp_tool_name(conn_name, mcp_tool.name)
+                tools.append(MCPTool(
+                    tool_name=fq_name,
+                    server_name=conn_name,
+                    description=mcp_tool.description,
+                    input_schema=mcp_tool.input_schema,
+                    connection=conn,
+                    read_only=mcp_tool.read_only,
+                    destructive=mcp_tool.destructive,
+                ))
+
+    return tools
 
 
 def find_tool_by_name(tools: list[Tool], name: str) -> Tool | None:

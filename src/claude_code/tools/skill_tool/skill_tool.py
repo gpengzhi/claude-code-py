@@ -1,6 +1,8 @@
-"""SkillTool -- invokes skills as sub-agent prompts.
+"""SkillTool -- invokes skills via a sub-agent.
 
 Maps to src/tools/SkillTool/SkillTool.ts in the TypeScript codebase.
+Loads the skill body and executes it as a system prompt on a sub-agent,
+matching the TS version's 'context: fork' behavior.
 """
 
 from __future__ import annotations
@@ -55,13 +57,39 @@ class SkillTool(Tool):
 
         if skill is None:
             return ToolResult(
-                data=f"Unknown skill: {args.skill}. Available skills: {', '.join(s['name'] for s in all_skills)}",
+                data=f"Unknown skill: {args.skill}. Available: {', '.join(s['name'] for s in all_skills)}",
                 is_error=True,
             )
 
-        # Build the prompt from skill body
-        prompt = skill.get("body", "")
-        if args.args:
-            prompt = f"{prompt}\n\nArguments: {args.args}"
+        skill_body = skill.get("body", "")
+        user_prompt = args.args or skill_body
 
-        return ToolResult(data=f"[Skill '{args.skill}' loaded]\n\n{prompt}")
+        # Determine which tools the skill is allowed to use
+        allowed_tools = skill.get("allowed_tools")
+        if allowed_tools and isinstance(allowed_tools, list):
+            skill_tools = [t for t in context.tools if t.name in allowed_tools]
+        else:
+            skill_tools = context.tools
+
+        # Fork a sub-agent with the skill body as system prompt
+        try:
+            from claude_code.query.engine import QueryEngine
+
+            engine = QueryEngine(
+                model=skill.get("model") or "claude-sonnet-4-20250514",
+                system_prompt=f"You are executing the skill '{args.skill}'.\n\n{skill_body}",
+                tools=skill_tools,
+                cwd=context.cwd,
+            )
+
+            result_parts: list[str] = []
+            async for event in engine.submit_message(user_prompt):
+                if isinstance(event, dict):
+                    if event.get("type") == "stream_event" and event.get("event_type") == "text_delta":
+                        result_parts.append(event.get("text", ""))
+
+            return ToolResult(data="".join(result_parts) or f"(skill '{args.skill}' produced no output)")
+
+        except Exception as e:
+            logger.error("SkillTool error: %s", e)
+            return ToolResult(data=f"Error executing skill '{args.skill}': {e}", is_error=True)

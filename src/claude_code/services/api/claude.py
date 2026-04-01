@@ -129,7 +129,11 @@ def add_cache_breakpoint_to_messages(
 def build_api_messages(
     messages: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Convert internal messages to Anthropic API format."""
+    """Convert internal messages to Anthropic API format.
+
+    Strips internal-only fields (model, cost_usd, uuid, etc.) and
+    ensures only role + content are sent to the API.
+    """
     api_messages: list[dict[str, Any]] = []
 
     for msg in messages:
@@ -141,15 +145,22 @@ def build_api_messages(
         if isinstance(content, str):
             api_messages.append({"role": role, "content": content})
         elif isinstance(content, list):
-            # Convert Pydantic models to dicts
+            # Convert Pydantic models to dicts, keeping only API-relevant fields
             blocks = []
             for block in content:
                 if hasattr(block, "model_dump"):
-                    blocks.append(block.model_dump(exclude_none=True))
+                    block_dict = block.model_dump(exclude_none=True)
                 elif isinstance(block, dict):
-                    blocks.append(block)
+                    block_dict = block
                 else:
-                    blocks.append({"type": "text", "text": str(block)})
+                    block_dict = {"type": "text", "text": str(block)}
+                # Strip internal fields from content blocks
+                blocks.append({
+                    k: v for k, v in block_dict.items()
+                    if k in ("type", "text", "id", "name", "input",
+                             "tool_use_id", "content", "is_error",
+                             "thinking", "cache_control")
+                })
             api_messages.append({"role": role, "content": blocks})
 
     return api_messages
@@ -180,24 +191,27 @@ def build_tool_schemas(tools: list[Any]) -> list[dict[str, Any]]:
     return schemas
 
 
-def get_beta_headers(model: str) -> list[str]:
-    """Build the beta headers array matching TS getMergedBetas().
+def get_extra_headers(model: str) -> dict[str, str]:
+    """Build extra HTTP headers for beta features.
 
-    These enable model capabilities that are gated behind beta flags.
+    In SDK v0.87+, thinking and prompt caching are first-class params.
+    Extended context is handled by the API automatically for supported models.
+    Only send beta headers when using the direct Anthropic API (not proxies).
     """
-    betas: list[str] = []
+    import os
+    headers: dict[str, str] = {}
 
-    # Interleaved thinking (enables streaming thinking blocks)
-    betas.append("interleaved-thinking-2025-05-14")
+    # Only send beta headers to the official Anthropic API.
+    # Proxies may hang or reject unknown beta headers.
+    base_url = os.environ.get("ANTHROPIC_BASE_URL", "")
+    if base_url and "api.anthropic.com" not in base_url:
+        return headers
 
-    # Prompt caching
-    betas.append("prompt-caching-2024-07-31")
-
-    # Extended context (1M for supported models)
+    # Extended context (1M) for supported models on the direct API
     if "opus" in model or "sonnet" in model:
-        betas.append("extended-context-2025-04-15")
+        headers["anthropic-beta"] = "extended-context-2025-04-15"
 
-    return betas
+    return headers
 
 
 async def query_model(
@@ -233,10 +247,10 @@ async def query_model(
         "messages": api_messages,
     }
 
-    # Beta headers (matching TS getMergedBetas)
-    betas = get_beta_headers(model)
-    if betas:
-        params["betas"] = betas
+    # Extra headers for beta features
+    extra_headers = get_extra_headers(model)
+    if extra_headers:
+        params["extra_headers"] = extra_headers
 
     # System prompt with prompt caching
     if isinstance(system_prompt, str) and system_prompt:
@@ -300,6 +314,7 @@ async def _execute_stream(
     content_blocks: list[ContentBlock] = []
     current_block: dict[str, Any] | None = None
     usage = Usage()
+    stop_reason: str | None = None
 
     try:
         async with client.messages.stream(**params) as stream:
@@ -314,6 +329,12 @@ async def _execute_stream(
                 if event_type == "message_start":
                     if ttft_ms is None:
                         ttft_ms = (time.monotonic() - start_time) * 1000
+                    # Capture input usage from message_start
+                    msg = getattr(event, "message", None)
+                    if msg and hasattr(msg, "usage") and msg.usage:
+                        usage.input_tokens = getattr(msg.usage, "input_tokens", 0) or 0
+                        usage.cache_read_input_tokens = getattr(msg.usage, "cache_read_input_tokens", 0) or 0
+                        usage.cache_creation_input_tokens = getattr(msg.usage, "cache_creation_input_tokens", 0) or 0
 
                 elif event_type == "content_block_start":
                     cb = event.content_block
@@ -376,32 +397,18 @@ async def _execute_stream(
                     current_block = None
 
                 elif event_type == "message_delta":
-                    # Final usage and stop_reason
+                    # Capture output usage and stop_reason
                     msg_usage = getattr(event, "usage", None)
                     if msg_usage:
-                        usage.output_tokens = getattr(
-                            msg_usage, "output_tokens", 0
-                        )
+                        usage.output_tokens = getattr(msg_usage, "output_tokens", 0) or 0
+                    delta = getattr(event, "delta", None)
+                    if delta and hasattr(delta, "stop_reason") and delta.stop_reason:
+                        stop_reason = delta.stop_reason
 
                 elif event_type == "message_stop":
                     pass
 
-            # Get final message for usage
-            final_message = await stream.get_final_message()
-            if final_message and final_message.usage:
-                usage.input_tokens = final_message.usage.input_tokens
-                usage.output_tokens = final_message.usage.output_tokens
-                usage.cache_read_input_tokens = getattr(
-                    final_message.usage, "cache_read_input_tokens", 0
-                ) or 0
-                usage.cache_creation_input_tokens = getattr(
-                    final_message.usage, "cache_creation_input_tokens", 0
-                ) or 0
-
             cost = calculate_cost(model, usage)
-            stop_reason = (
-                final_message.stop_reason if final_message else None
-            )
 
     except Exception as e:
         logger.error("API call failed: %s", e)

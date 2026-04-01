@@ -42,7 +42,7 @@ class TestToolNames:
         "WebFetch", "WebSearch", "Agent",
         "TaskCreate", "TaskGet", "TaskUpdate", "TaskList",
         "EnterPlanMode", "ExitPlanMode",
-        "AskUserQuestion", "NotebookEdit", "Skill",
+        "AskUserQuestion", "Skill",
     ])
     def test_tool_name_exists(self, expected_name: str) -> None:
         schema = get_schema(expected_name)

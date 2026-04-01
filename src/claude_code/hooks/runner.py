@@ -58,8 +58,11 @@ async def run_hook(
         elif hook_type == "http":
             return await _run_http_hook(hook_def, context, timeout)
         elif hook_type == "prompt":
-            # Prompt hooks would need LLM integration -- return success for now
-            return HookResult(outcome="success")
+            logger.warning("Prompt hooks are not supported (requires LLM integration)")
+            return HookResult(
+                outcome="non_blocking_error",
+                message="Prompt hooks are not implemented. Use 'command' or 'http' hook types.",
+            )
         else:
             logger.warning("Unknown hook type: %s", hook_type)
             return HookResult(outcome="non_blocking_error", message=f"Unknown hook type: {hook_type}")

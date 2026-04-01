@@ -107,11 +107,16 @@ class MCPConnection:
         return False
 
     async def _connect_http(self) -> bool:
-        """Connect via HTTP transport (SSE or Streamable HTTP)."""
-        # For HTTP transports, we don't maintain a persistent connection.
-        # Each request is a separate HTTP call.
-        self.connected = True
-        return True
+        """Connect via HTTP transport (SSE or Streamable HTTP).
+
+        Not yet implemented -- stdio is the supported transport.
+        """
+        logger.warning(
+            "MCP HTTP/SSE transport is not implemented for server '%s'. "
+            "Use stdio transport instead.",
+            self.name,
+        )
+        return False
 
     async def _read_responses(self) -> None:
         """Read JSON-RPC responses from the server's stdout."""

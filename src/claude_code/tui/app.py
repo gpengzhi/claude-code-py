@@ -102,6 +102,10 @@ class ClaudeCodeApp(App):
         max_tokens: int = 16384,
         tools: list[Tool] | None = None,
         initial_prompt: str | None = None,
+        hooks_config: dict | None = None,
+        permission_mode: str = "default",
+        resume_session: str | None = None,
+        thinking: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -110,6 +114,10 @@ class ClaudeCodeApp(App):
         self._max_tokens = max_tokens
         self._tools = tools or []
         self._initial_prompt = initial_prompt
+        self._hooks_config = hooks_config
+        self._permission_mode = permission_mode
+        self._resume_session = resume_session
+        self._thinking = thinking
 
     async def on_mount(self) -> None:
         """Push the REPL screen on mount."""
@@ -120,6 +128,10 @@ class ClaudeCodeApp(App):
             system_prompt=self._system_prompt,
             max_tokens=self._max_tokens,
             tools=self._tools,
+            hooks_config=self._hooks_config,
+            permission_mode=self._permission_mode,
+            resume_session=self._resume_session,
+            thinking=self._thinking,
         )
         await self.push_screen(screen)
 
@@ -132,7 +144,6 @@ class ClaudeCodeApp(App):
 
     def action_interrupt(self) -> None:
         """Handle Ctrl+C."""
-        # Try to cancel current query on the active screen
         screen = self.screen
         if hasattr(screen, "cancel_query"):
             screen.cancel_query()  # type: ignore

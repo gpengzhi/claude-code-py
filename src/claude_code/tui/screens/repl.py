@@ -23,6 +23,7 @@ from claude_code.tui.widgets.prompt_input import PromptInput, PromptSubmitted
 from claude_code.tui.widgets.spinner import Spinner
 from claude_code.tui.widgets.status_bar import StatusBar
 from claude_code.types.message import AssistantMessage, TextBlock, ThinkingBlock, ToolUseBlock
+from claude_code.utils.session_storage import generate_session_id, save_message, load_session
 
 logger = logging.getLogger(__name__)
 
@@ -36,19 +37,43 @@ class REPLScreen(Screen):
         system_prompt: str = "",
         max_tokens: int = 16384,
         tools: list[Tool] | None = None,
+        hooks_config: dict | None = None,
+        permission_mode: str = "default",
+        resume_session: str | None = None,
+        thinking: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self._tools = tools or get_tools()
+        self._permission_mode = permission_mode
+        self._session_id = resume_session or generate_session_id()
+
+        # Permission callback that routes through the TUI dialog
+        async def _permission_callback(
+            tool_name: str, tool_input: dict[str, Any], message: str,
+        ) -> bool:
+            return await self._ask_permission(tool_name, tool_input, message)
+
         self._engine = QueryEngine(
             model=model,
             system_prompt=system_prompt,
             max_tokens=max_tokens,
             tools=self._tools,
+            hooks_config=hooks_config,
+            permission_callback=_permission_callback,
+            thinking=thinking,
         )
         self._is_querying = False
         self._streaming_text = ""
         self._current_task: asyncio.Task | None = None
+
+        # Resume previous session if requested
+        if resume_session:
+            prev_messages = load_session(resume_session)
+            for msg in prev_messages:
+                msg.pop("sessionId", None)
+                msg.pop("timestamp", None)
+                self._engine.messages.append(msg)
 
     def compose(self) -> ComposeResult:
         yield MessageList(id="message-container")
@@ -57,12 +82,30 @@ class REPLScreen(Screen):
         yield StatusBar(id="status-bar")
 
     def on_mount(self) -> None:
-        # Update status bar with model info
         try:
             status = self.query_one("#status-bar", StatusBar)
             status.update_stats(model=self._engine.model)
+            # Show session ID so user can resume later
+            logger.info("Session ID: %s", self._session_id)
         except NoMatches:
             pass
+
+    async def _ask_permission(
+        self,
+        tool_name: str,
+        tool_input: dict[str, Any],
+        message: str,
+    ) -> bool:
+        """Show permission dialog and wait for user response."""
+        from claude_code.tui.widgets.permission_dialog import PermissionDialog
+
+        dialog = PermissionDialog(
+            tool_name=tool_name,
+            tool_input=tool_input,
+            message=message,
+        )
+        result = await self.app.push_screen_wait(dialog)
+        return bool(result)
 
     async def on_prompt_submitted(self, event: PromptSubmitted) -> None:
         """Handle user prompt submission."""
@@ -76,14 +119,12 @@ class REPLScreen(Screen):
         if self._is_querying:
             return
 
-        # Show user message
+        # Show user message and persist
         messages = self.query_one("#message-container", MessageList)
         messages.add_user_message(text)
+        save_message(self._session_id, {"role": "user", "content": text})
 
-        # Disable input during query
         self._set_querying(True)
-
-        # Run query in background
         self._current_task = asyncio.create_task(self._run_query(text))
 
     async def _run_query(self, prompt: str) -> None:
@@ -97,12 +138,13 @@ class REPLScreen(Screen):
         try:
             async for event in self._engine.submit_message(prompt):
                 if isinstance(event, AssistantMessage):
-                    # Finalize streaming
                     if self._streaming_text:
                         messages.finish_streaming()
                         self._streaming_text = ""
 
-                    # Display tool use blocks
+                    # Persist assistant message
+                    save_message(self._session_id, event.model_dump(exclude_none=True))
+
                     for block in event.content:
                         if isinstance(block, ToolUseBlock):
                             messages.add_tool_use(block.name, block.input)
@@ -113,7 +155,6 @@ class REPLScreen(Screen):
                     event_type = event.get("type")
 
                     if event_type == "stream_event" and event.get("event_type") == "text_delta":
-                        # Streaming text
                         delta = event.get("text", "")
                         if not self._streaming_text:
                             messages.start_streaming()
@@ -121,7 +162,6 @@ class REPLScreen(Screen):
                         messages.update_streaming(self._streaming_text)
 
                     elif event_type == "tool_result_display":
-                        # Tool result
                         spinner.update_text(f"Running {event.get('tool_name', 'tool')}...")
                         messages.add_tool_result(
                             event.get("tool_use_id", ""),
@@ -130,7 +170,6 @@ class REPLScreen(Screen):
                         )
 
                     elif event_type == "tool_results":
-                        # Batch tool results done, continuing to next turn
                         turn = event.get("turn", 0)
                         count = event.get("count", 0)
                         spinner.update_text(f"Turn {turn} ({count} tool results)...")
@@ -147,7 +186,6 @@ class REPLScreen(Screen):
             logger.error("Query failed: %s", e, exc_info=True)
             messages.add_system_message(f"Error: {e}", level="error")
         finally:
-            # Finalize any in-progress streaming
             if self._streaming_text:
                 messages.finish_streaming()
                 self._streaming_text = ""
@@ -155,7 +193,6 @@ class REPLScreen(Screen):
             spinner.hide()
             self._set_querying(False)
 
-            # Update status bar
             try:
                 status = self.query_one("#status-bar", StatusBar)
                 status.update_stats(
@@ -182,7 +219,6 @@ class REPLScreen(Screen):
 
         messages = self.query_one("#message-container", MessageList)
 
-        # Parse command name and args
         parts = text.strip().split(None, 1)
         cmd_name = parts[0].lstrip("/").lower()
         cmd_args = parts[1] if len(parts) > 1 else ""
@@ -199,10 +235,8 @@ class REPLScreen(Screen):
             messages.add_system_message(f"Command /{cmd_name} has no handler.", level="error")
             return
 
-        # Execute the command
         result = await cmd.handler(engine=self._engine, args=cmd_args)
 
-        # Handle special results
         if result.message == "__quit__":
             self.app.exit()
             return
@@ -214,7 +248,6 @@ class REPLScreen(Screen):
         if result.message:
             messages.add_system_message(result.message, level=result.level)
 
-        # If command wants to query the model
         if result.should_query and result.query_text:
             self._set_querying(True)
             self._current_task = asyncio.create_task(

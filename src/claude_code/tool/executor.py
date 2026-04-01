@@ -85,14 +85,40 @@ async def execute_tool(
                 except ValidationError:
                     pass  # Keep original input if hook's update is invalid
 
-    # 4. Permission check
-    perm_result = await tool.check_permissions(parsed_input, context)
-    if hasattr(perm_result, 'behavior') and perm_result.behavior == "deny":
-        return ToolResultBlock(
-            tool_use_id=tool_use_id,
-            content=f"Permission denied: {getattr(perm_result, 'message', 'Tool not allowed')}",
-            is_error=True,
+    # 4. Permission check -- global permission system, then tool-specific
+    from claude_code.permissions.check import has_permissions_to_use_tool
+    if context._app_state is not None:
+        perm_result = has_permissions_to_use_tool(
+            tool.name, tool_input, context.get_app_state().tool_permission_context,
         )
+    else:
+        # No app state configured -- fall back to tool-specific check only
+        perm_result = await tool.check_permissions(parsed_input, context)
+    if hasattr(perm_result, 'behavior'):
+        if perm_result.behavior == "deny":
+            return ToolResultBlock(
+                tool_use_id=tool_use_id,
+                content=f"Permission denied: {getattr(perm_result, 'message', 'Tool not allowed')}",
+                is_error=True,
+            )
+        elif perm_result.behavior == "ask":
+            # Route through permission callback if available
+            message = getattr(perm_result, 'message', f'Allow {tool.name}?')
+            if context.permission_callback:
+                allowed = await context.permission_callback(tool.name, tool_input, message)
+                if not allowed:
+                    return ToolResultBlock(
+                        tool_use_id=tool_use_id,
+                        content=f"Permission denied by user: {tool.name}",
+                        is_error=True,
+                    )
+            else:
+                # No callback available -- deny by default for safety
+                return ToolResultBlock(
+                    tool_use_id=tool_use_id,
+                    content=f"Permission required but no interactive session: {tool.name}",
+                    is_error=True,
+                )
 
     # 5. Execute tool
     try:

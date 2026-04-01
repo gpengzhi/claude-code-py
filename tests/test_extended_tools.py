@@ -15,7 +15,7 @@ from claude_code.state.app_state import AppState
 class TestExtendedRegistry:
     def test_all_tools_load(self) -> None:
         tools = get_all_base_tools()
-        assert len(tools) == 18  # 6 core + 12 extended
+        assert len(tools) == 17  # 6 core + 11 extended
         names = [t.name for t in tools]
         assert "WebFetch" in names
         assert "WebSearch" in names
@@ -27,7 +27,6 @@ class TestExtendedRegistry:
         assert "EnterPlanMode" in names
         assert "ExitPlanMode" in names
         assert "AskUserQuestion" in names
-        assert "NotebookEdit" in names
         assert "Skill" in names
 
     def test_all_tools_have_schemas(self) -> None:
@@ -45,15 +44,13 @@ class TestTaskTools:
     @pytest.fixture
     def ctx(self, tmp_path: Path) -> ToolUseContext:
         state = AppState(tasks={})
-        return ToolUseContext(
-            cwd=tmp_path,
-            get_app_state=lambda: state,
-            set_app_state=lambda updater: None,
-        )
+        ctx = ToolUseContext(cwd=tmp_path)
+        ctx._app_state = state
+        return ctx
 
     @pytest.mark.asyncio
     async def test_task_create(self, ctx: ToolUseContext) -> None:
-        from claude_code.tools.task_tools.task_create import TaskCreateTool, TaskCreateInput
+        from claude_code.tools.task_tools.task_tools import TaskCreateTool, TaskCreateInput
         tool = TaskCreateTool()
         result = await tool.call(
             TaskCreateInput(subject="Test task", description="Do something"),
@@ -64,7 +61,7 @@ class TestTaskTools:
 
     @pytest.mark.asyncio
     async def test_task_list_empty(self, ctx: ToolUseContext) -> None:
-        from claude_code.tools.task_tools.task_list import TaskListTool, TaskListInput
+        from claude_code.tools.task_tools.task_tools import TaskListTool, TaskListInput
         tool = TaskListTool()
         result = await tool.call(TaskListInput(), ctx)
         assert not result.is_error
@@ -75,15 +72,9 @@ class TestTaskTools:
 class TestPlanTools:
     @pytest.fixture
     def ctx(self, tmp_path: Path) -> ToolUseContext:
-        state = AppState()
-        def set_state(updater):
-            nonlocal state
-            state = updater(state)
-        return ToolUseContext(
-            cwd=tmp_path,
-            get_app_state=lambda: state,
-            set_app_state=set_state,
-        )
+        ctx = ToolUseContext(cwd=tmp_path)
+        ctx._app_state = AppState()
+        return ctx
 
     @pytest.mark.asyncio
     async def test_enter_plan_mode(self, ctx: ToolUseContext) -> None:
@@ -99,49 +90,6 @@ class TestPlanTools:
         tool = ExitPlanModeTool()
         result = await tool.call(ExitPlanModeInput(), ctx)
         assert not result.is_error
-
-
-# --- NotebookEdit ---
-
-class TestNotebookEdit:
-    @pytest.mark.asyncio
-    async def test_edit_notebook(self, tmp_path: Path) -> None:
-        from claude_code.tools.notebook_edit_tool.notebook_edit_tool import (
-            NotebookEditTool, NotebookEditInput,
-        )
-        ctx = ToolUseContext(cwd=tmp_path)
-
-        # Create a minimal notebook
-        nb = {
-            "cells": [
-                {"cell_type": "code", "source": ["print('hello')"], "metadata": {}, "outputs": [], "execution_count": None}
-            ],
-            "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"}},
-            "nbformat": 4,
-            "nbformat_minor": 5,
-        }
-        nb_path = tmp_path / "test.ipynb"
-        nb_path.write_text(json.dumps(nb))
-
-        # Read first (for edit validation)
-        from claude_code.tools.file_read_tool.file_read_tool import FileReadTool, FileReadInput
-        read_tool = FileReadTool()
-        await read_tool.call(FileReadInput(file_path=str(nb_path)), ctx)
-
-        tool = NotebookEditTool()
-        result = await tool.call(
-            NotebookEditInput(
-                notebook_path=str(nb_path),
-                new_source="print('world')",
-                cell_number=0,
-            ),
-            ctx,
-        )
-        assert not result.is_error
-
-        # Verify the change
-        updated = json.loads(nb_path.read_text())
-        assert "world" in updated["cells"][0]["source"][0]
 
 
 # --- WebFetch ---

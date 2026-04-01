@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 class QueryEngine:
     """Manages a conversation session with the Claude API.
 
-    One QueryEngine per conversation. State (messages, usage) persists
-    across multiple submit_message() calls.
+    One QueryEngine per conversation. The query_loop mutates self.messages
+    directly (it receives a reference), so messages stay in sync across turns.
     """
 
     def __init__(
@@ -32,6 +32,10 @@ class QueryEngine:
         max_tokens: int = 16384,
         tools: list[Tool] | None = None,
         cwd: Path | None = None,
+        hooks_config: dict | None = None,
+        permission_callback: Any | None = None,
+        thinking: bool = False,
+        permission_mode: str = "default",
     ) -> None:
         self.model = model
         self.system_prompt = system_prompt
@@ -42,13 +46,23 @@ class QueryEngine:
         self.total_usage = Usage()
         self.abort_event = asyncio.Event()
         self.turn_count = 0
+        self.hooks_config = hooks_config
+        self.permission_callback = permission_callback
+        self.thinking = thinking
+        self.permission_mode = permission_mode
 
         # Create tool use context
         self.tool_use_context = ToolUseContext(
             cwd=self.cwd,
             tools=self.tools,
             abort_event=self.abort_event,
+            permission_callback=permission_callback,
         )
+        # Set permission mode on app state
+        if permission_mode != "default":
+            from claude_code.types.permissions import ToolPermissionContext
+            app_state = self.tool_use_context.get_app_state()
+            app_state.tool_permission_context = ToolPermissionContext(mode=permission_mode)
 
     def abort(self) -> None:
         """Abort the current query."""
@@ -65,14 +79,18 @@ class QueryEngine:
         *,
         max_turns: int = 100,
     ) -> AsyncGenerator[AssistantMessage | dict[str, Any], None]:
-        """Submit a user message and yield streaming responses."""
+        """Submit a user message and yield streaming responses.
+
+        The query_loop receives self.messages by reference and appends
+        assistant messages / tool results directly, keeping history in sync.
+        """
         self.reset_abort()
 
         # Add user message
         user_msg = {"role": "user", "content": prompt}
         self.messages.append(user_msg)
 
-        # Run the query loop
+        # Run the query loop -- it mutates self.messages in place
         async for event in query_loop(
             messages=self.messages,
             system_prompt=self.system_prompt,
@@ -82,6 +100,9 @@ class QueryEngine:
             tool_use_context=self.tool_use_context,
             abort_event=self.abort_event,
             max_turns=max_turns,
+            hooks_config=self.hooks_config,
+            cumulative_cost_usd=self.total_usage.cost_usd,
+            thinking=self.thinking,
         ):
             if isinstance(event, AssistantMessage):
                 # Track usage
@@ -91,13 +112,5 @@ class QueryEngine:
                 self.total_usage.cache_creation_input_tokens += event.cache_creation_input_tokens
                 self.total_usage.cost_usd += event.cost_usd
                 self.turn_count += 1
-
-                # Add to conversation history
-                self.messages.append(event.model_dump(exclude_none=True))
-
-            elif isinstance(event, dict) and event.get("type") == "tool_results":
-                # Tool results already added by query_loop to working_messages,
-                # but we need to sync our messages list
-                pass
 
             yield event

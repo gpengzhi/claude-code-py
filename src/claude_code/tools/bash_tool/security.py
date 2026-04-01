@@ -1,7 +1,7 @@
 """Bash security checks.
 
 Maps to src/tools/BashTool/bashSecurity.ts in the TypeScript codebase.
-Implements the 23 named security checks that detect dangerous command patterns.
+Implements 15 named security checks that detect dangerous command patterns.
 """
 
 from __future__ import annotations

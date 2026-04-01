@@ -10,16 +10,17 @@ import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Awaitable
 
 from pydantic import BaseModel
 
-from claude_code.state.app_state import AppState
 from claude_code.types.permissions import (
     PermissionAllowDecision,
     PermissionResult,
-    ToolPermissionContext,
 )
+
+# Type for the async permission callback: receives (tool_name, tool_input, message) -> allow/deny
+PermissionCallback = Callable[[str, dict[str, Any], str], Awaitable[bool]]
 
 
 class ToolResult(BaseModel):
@@ -41,16 +42,26 @@ class ToolUseContext:
     cwd: Path = field(default_factory=Path.cwd)
     tools: list[Tool] = field(default_factory=list)
     abort_event: asyncio.Event = field(default_factory=asyncio.Event)
-    get_app_state: Callable[[], AppState] = field(
-        default_factory=lambda: lambda: AppState()
-    )
-    set_app_state: Callable[[Callable[[AppState], AppState]], None] = field(
-        default_factory=lambda: lambda updater: None
-    )
     messages: list[Any] = field(default_factory=list)
     read_file_state: dict[str, Any] = field(default_factory=dict)
     agent_id: str | None = None
     agent_type: str | None = None
+    # Async callback for permission "ask" decisions; if None, defaults to deny
+    permission_callback: PermissionCallback | None = None
+    # Shared mutable app state -- direct reference, no React-style updater
+    _app_state: Any = field(default=None)
+
+    def get_app_state(self) -> Any:
+        """Get current app state. Creates default if none set."""
+        if self._app_state is None:
+            from claude_code.state.app_state import AppState
+            self._app_state = AppState()
+        return self._app_state
+
+    def set_app_state(self, updater: Callable) -> None:
+        """Update app state via updater function for backwards compat."""
+        current = self.get_app_state()
+        self._app_state = updater(current)
 
 
 class Tool(ABC):

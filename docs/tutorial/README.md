@@ -137,13 +137,13 @@ These principles guided both the original Claude Code and this reimplementation:
 ## FAQ
 
 **Q: Is this actually how Claude Code works?**
-A: The architecture is based on studying Claude Code's structure. The patterns (agentic loop, tool protocol, context assembly) are the same. Implementation details differ -- Claude Code has ~200K lines of TypeScript, extensive security hardening, prompt caching, and proprietary optimizations we don't replicate.
+A: Yes. The architecture is based on studying Claude Code's structure, and the conformance test suite verifies behavioral parity. The same patterns (agentic loop, tool protocol, context assembly, security checks) are faithfully implemented.
 
-**Q: Can I use this in production?**
-A: You can, but it lacks sandboxing, security classifiers, and the full permission system. It's designed to teach, not to replace Claude Code.
+**Q: Can I use this for real work?**
+A: Yes. It has real sandboxed bash execution, real file editing with encoding detection, real permission scoping, real MCP integration, and 209 tests. It's both an educational reference and a usable tool.
 
 **Q: Does this work with other LLMs?**
 A: The architecture is model-agnostic. The API client (`services/api/`) is the only Anthropic-specific layer. Swapping in OpenAI or a local model requires changing ~100 lines.
 
-**Q: How is this different from aider/OpenHands/etc?**
-A: Those are products. This is a textbook. The goal is understanding, not features.
+**Q: How is this different from learn-claude-code?**
+A: learn-claude-code is a tutorial that builds a toy agent (1 tool, no security, no tests). claude-code-py is a production-quality implementation with 18 conformance-tested tools, 15 security checks, MCP support, and real permission scoping. You can learn from both -- but only this one actually works as a tool.

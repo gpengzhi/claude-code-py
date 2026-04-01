@@ -62,36 +62,28 @@ class AgentTool(Tool):
         logger.info("AgentTool: spawning sub-agent for: %s", args.description)
 
         try:
-            # Import here to avoid circular imports
-            from claude_code.query_engine import QueryEngine
+            from claude_code.query.engine import QueryEngine
 
-            app_state = context.get_app_state()
-            model = args.model or app_state.main_loop_model
+            model = args.model or "claude-sonnet-4-20250514"
 
+            # Create an isolated sub-agent with its own message history
             engine = QueryEngine(
                 model=model,
+                system_prompt=f"You are a sub-agent. Task: {args.description}",
                 tools=context.tools,
                 cwd=context.cwd,
-                app_state=app_state,
-                agent_id=f"sub-{context.agent_id or 'main'}",
-                agent_type=args.subagent_type or "sub",
             )
 
-            result = await engine.run(args.prompt)
-            return ToolResult(data=result)
+            # Collect all text output from the sub-agent
+            result_parts: list[str] = []
+            async for event in engine.submit_message(args.prompt):
+                if isinstance(event, dict):
+                    event_type = event.get("type")
+                    if event_type == "stream_event" and event.get("event_type") == "text_delta":
+                        result_parts.append(event.get("text", ""))
 
-        except ImportError:
-            # QueryEngine not available - return a simplified response
-            logger.warning("QueryEngine not available for AgentTool")
-            return ToolResult(
-                data=(
-                    f"Sub-agent requested for: {args.description}\n"
-                    f"Prompt: {args.prompt}\n\n"
-                    "Note: Sub-agent execution is not yet fully integrated. "
-                    "The QueryEngine module is required for sub-agent spawning."
-                ),
-                is_error=True,
-            )
+            return ToolResult(data="".join(result_parts) or "(sub-agent produced no output)")
+
         except Exception as e:
             logger.error("AgentTool error: %s", e)
             return ToolResult(
