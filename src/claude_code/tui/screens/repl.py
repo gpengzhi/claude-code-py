@@ -243,11 +243,18 @@ class REPLScreen(Screen):
                     # Persist assistant message
                     save_message(self._session_id, event.model_dump(exclude_none=True))
 
+                    # Show tool use blocks and update spinner
+                    has_tools = False
                     for block in event.content:
                         if isinstance(block, ToolUseBlock):
+                            has_tools = True
                             messages.add_tool_use(block.name, block.input)
+                            spinner.show(f"Running {block.name}...")
                         elif isinstance(block, ThinkingBlock):
                             messages.add_thinking(block.thinking)
+
+                    if not has_tools:
+                        spinner.hide()
 
                 elif isinstance(event, dict):
                     event_type = event.get("type")
@@ -255,12 +262,12 @@ class REPLScreen(Screen):
                     if event_type == "stream_event" and event.get("event_type") == "text_delta":
                         delta = event.get("text", "")
                         if not self._streaming_text:
+                            spinner.hide()
                             messages.start_streaming()
                         self._streaming_text += delta
                         messages.update_streaming(self._streaming_text)
 
                     elif event_type == "tool_result_display":
-                        spinner.update_text(f"Running {event.get('tool_name', 'tool')}...")
                         messages.add_tool_result(
                             event.get("tool_use_id", ""),
                             str(event.get("content", "")),
@@ -268,9 +275,8 @@ class REPLScreen(Screen):
                         )
 
                     elif event_type == "tool_results":
-                        turn = event.get("turn", 0)
-                        count = event.get("count", 0)
-                        spinner.update_text(f"Turn {turn} ({count} tool results)...")
+                        # Tools done, next API call coming
+                        spinner.show("Thinking...")
 
                     elif event_type == "api_error":
                         messages.add_system_message(
