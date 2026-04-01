@@ -26,8 +26,7 @@ class PromptSubmitted(Message):
 class PromptInput(Widget):
     """Multi-line prompt input with history navigation."""
 
-    can_focus = True
-    can_focus_children = True
+    # can_focus defaults to False -- focus passes through to the child Input widget
 
     def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)

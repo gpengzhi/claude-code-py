@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 class REPLScreen(Screen):
     """The main interactive REPL screen."""
 
+    AUTO_FOCUS = "#prompt-text-input"
+
     def __init__(
         self,
         model: str,
@@ -85,7 +87,6 @@ class REPLScreen(Screen):
         try:
             status = self.query_one("#status-bar", StatusBar)
             status.update_stats(model=self._engine.model)
-            # Show session ID so user can resume later
             logger.info("Session ID: %s", self._session_id)
         except NoMatches:
             pass

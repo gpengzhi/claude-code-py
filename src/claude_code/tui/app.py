@@ -32,6 +32,26 @@ Screen {
     padding: 0 1;
 }
 
+#prompt-text-input {
+    width: 1fr;
+    height: 1;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border: none;
+}
+
+#prompt-text-input:focus {
+    border: none;
+    background: #1e1e2e;
+    color: #cdd6f4;
+}
+
+.prompt-prefix {
+    width: auto;
+    height: 1;
+    padding: 0;
+}
+
 #status-bar {
     dock: bottom;
     height: 1;

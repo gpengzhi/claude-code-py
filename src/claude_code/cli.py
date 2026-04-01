@@ -147,8 +147,10 @@ def main(
             if key not in os.environ:  # Don't override existing env vars
                 os.environ[key] = str(value)
 
-    # Resolve model: CLI flag > settings > env-based default > hardcoded default
-    resolved_model = model or _resolve_model(settings)
+    # Resolve model: CLI flag > CLAUDE_MODEL env var > sonnet default
+    # We don't read "model" from ~/.claude/settings.json because that's
+    # the official Claude Code's config, not ours.
+    resolved_model = model or os.environ.get("CLAUDE_MODEL") or _resolve_model({"model": "sonnet"})
 
     # Resolve permission mode
     resolved_perm_mode = "default"
@@ -165,7 +167,11 @@ def main(
     # Load permission rules from settings
     perm_rules = get_permission_rules(settings)
 
-    if print_mode or not sys.stdin.isatty():
+    # Decide mode: only use print mode if -p flag is explicitly set,
+    # or if a prompt argument is given (one-shot). Otherwise launch TUI.
+    use_print_mode = print_mode or prompt is not None
+
+    if use_print_mode:
         # Non-interactive mode -- default to accepting all tools since user can't approve
         if resolved_perm_mode == "default":
             resolved_perm_mode = "bypassPermissions"
