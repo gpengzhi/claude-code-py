@@ -14,6 +14,18 @@ An open-source Python implementation of [Claude Code](https://docs.anthropic.com
 
 ## Why Does This Exist?
 
+Most "build your own agent" tutorials stop at the 5-line loop:
+
+```python
+while True:
+    response = call_model(messages, tools)
+    if no tool_use: break
+    results = execute_tools(response)
+    messages.append(results)
+```
+
+Real-world agents like Claude Code have 500,000+ lines on top of this loop. **What are all those lines doing?** This project answers that question -- with ~8,800 lines of working Python that you can read, run, and modify.
+
 There's a gap in the ecosystem:
 
 | | [learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) | **claude-code-py** | Official Claude Code |
@@ -151,10 +163,21 @@ pytest conformance/ -v
 - [`hooks/runner.py`](src/claude_code/hooks/runner.py) -- Hook execution
 - [`services/mcp/client.py`](src/claude_code/services/mcp/client.py) -- MCP client (stdio + HTTP)
 
-## Architecture Deep Dives
+## Learn: Build It From Scratch
 
-- [How AI Coding Agents Work](docs/how-ai-coding-agents-work.md) -- Conceptual overview
-- [Tutorial: Build It Step by Step](docs/tutorial/) -- 7 chapters, from hello-world to full agent
+A [7-chapter tutorial](docs/tutorial/) that builds this entire codebase step by step. Each chapter adds one layer, with working code at every stage.
+
+| | Chapter | What You Build |
+|---|---|---|
+| 1 | [Hello Agent](docs/tutorial/chapter-01-hello-agent.md) | A CLI that streams responses from Claude |
+| 2 | [Adding Tools](docs/tutorial/chapter-02-adding-tools.md) | The tool protocol -- teach your agent to read files and run commands |
+| 3 | [The Agentic Loop](docs/tutorial/chapter-03-agentic-loop.md) | Autonomous tool chaining, parallel execution, error recovery |
+| 4 | [A Real Terminal UI](docs/tutorial/chapter-04-terminal-ui.md) | Interactive REPL with streaming, spinners, and permission dialogs |
+| 5 | [Context Engineering](docs/tutorial/chapter-05-context-engineering.md) | System prompt assembly, CLAUDE.md, git context, persistent memory |
+| 6 | [Permissions and Safety](docs/tutorial/chapter-06-permissions-safety.md) | Security checks, sandboxing, permission modes, hooks |
+| 7 | [Extension Points](docs/tutorial/chapter-07-extension-points.md) | Skills, MCP client, slash commands |
+
+Also see: [How AI Coding Agents Work](docs/how-ai-coding-agents-work.md) -- a conceptual overview of the architecture.
 
 ## CLI Options
 
