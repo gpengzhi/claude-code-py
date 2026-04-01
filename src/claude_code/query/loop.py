@@ -107,9 +107,17 @@ async def query_loop(
         if did_compact:
             yield {"type": "system_event", "event": "compacted"}
 
-        # Call the model
+        # Call the model with streaming tool execution
         assistant_message: AssistantMessage | None = None
         tool_use_blocks: list[ToolUseBlock] = []
+
+        # Create streaming executor if we have tools
+        streaming_executor = None
+        if active_tools and tool_use_context:
+            from claude_code.tool.streaming_executor import StreamingToolExecutor
+            streaming_executor = StreamingToolExecutor(
+                active_tools, tool_use_context, hooks_config
+            )
 
         async for event in query_model(
             messages=working_messages,
@@ -123,10 +131,12 @@ async def query_loop(
                 assistant_message = event
                 yield event
 
-                # Extract tool_use blocks
+                # Extract tool_use blocks and start streaming execution
                 for block in event.content:
                     if isinstance(block, ToolUseBlock):
                         tool_use_blocks.append(block)
+                        if streaming_executor:
+                            streaming_executor.submit(block)
             elif isinstance(event, dict):
                 yield event
 
@@ -169,14 +179,22 @@ async def query_loop(
         # Reset recovery counter on successful tool use
         max_output_recovery_count = 0
 
-        # Execute tools using the executor
-        if active_tools and tool_use_context:
+        # Execute tools -- use streaming executor results if available
+        if active_tools and tool_use_context and streaming_executor:
+            tool_results_blocks = await streaming_executor.get_results(tool_use_blocks)
+            tool_results = [r.model_dump(exclude_none=True) for r in tool_results_blocks]
+            for result_block in tool_results_blocks:
+                yield {
+                    "type": "tool_result_display",
+                    "tool_use_id": result_block.tool_use_id,
+                    "content": result_block.content,
+                    "is_error": result_block.is_error,
+                }
+        elif active_tools and tool_use_context:
             tool_results_blocks = await run_tools(
                 tool_use_blocks, active_tools, tool_use_context, hooks_config
             )
             tool_results = [r.model_dump(exclude_none=True) for r in tool_results_blocks]
-
-            # Yield tool results for display
             for result_block in tool_results_blocks:
                 yield {
                     "type": "tool_result_display",

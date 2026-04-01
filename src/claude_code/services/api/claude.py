@@ -71,6 +71,61 @@ def calculate_cost(model: str, usage: Usage) -> float:
     )
 
 
+CACHE_CONTROL_EPHEMERAL = {"type": "ephemeral"}
+
+
+def build_system_prompt_blocks(system_prompt: str) -> list[dict[str, Any]]:
+    """Convert system prompt string to cache-annotated text blocks.
+
+    Maps to buildSystemPromptBlocks/splitSysPromptPrefix in the TS codebase.
+    Places a cache_control breakpoint on the last system block so the entire
+    system prompt is eligible for caching.
+    """
+    # Split into meaningful sections for caching granularity
+    # The key insight: put cache_control on the last block so the entire
+    # system prompt prefix is cached as one unit
+    return [
+        {
+            "type": "text",
+            "text": system_prompt,
+            "cache_control": CACHE_CONTROL_EPHEMERAL,
+        }
+    ]
+
+
+def add_cache_breakpoint_to_messages(
+    messages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Add a cache_control breakpoint to the last message.
+
+    Maps to addCacheBreakpoints() in the TS codebase.
+    Places exactly one cache_control marker on the last message's last content block.
+    """
+    if not messages:
+        return messages
+
+    # Work on a copy
+    messages = [dict(m) for m in messages]
+    last_msg = messages[-1]
+    content = last_msg.get("content")
+
+    if isinstance(content, str):
+        # Wrap string content in a text block with cache_control
+        last_msg["content"] = [
+            {"type": "text", "text": content, "cache_control": CACHE_CONTROL_EPHEMERAL}
+        ]
+    elif isinstance(content, list) and content:
+        # Add cache_control to the last content block
+        content = [dict(b) if isinstance(b, dict) else b for b in content]
+        last_block = content[-1]
+        if isinstance(last_block, dict):
+            last_block["cache_control"] = CACHE_CONTROL_EPHEMERAL
+        last_msg["content"] = content
+
+    messages[-1] = last_msg
+    return messages
+
+
 def build_api_messages(
     messages: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -146,8 +201,9 @@ async def query_model(
     """
     client = get_anthropic_client()
 
-    # Build API messages
+    # Build API messages with cache breakpoint on last message
     api_messages = build_api_messages(messages)
+    api_messages = add_cache_breakpoint_to_messages(api_messages)
 
     # Build request params (stream is handled by the .stream() method, not a param)
     params: dict[str, Any] = {
@@ -156,9 +212,9 @@ async def query_model(
         "messages": api_messages,
     }
 
-    # System prompt
-    if isinstance(system_prompt, str):
-        params["system"] = system_prompt
+    # System prompt with prompt caching
+    if isinstance(system_prompt, str) and system_prompt:
+        params["system"] = build_system_prompt_blocks(system_prompt)
     elif isinstance(system_prompt, list):
         params["system"] = system_prompt
 
