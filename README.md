@@ -1,4 +1,4 @@
-# claude-code-py
+# Build Production-Level Claude Code in Python
 
 > Production-quality open-source Claude Code in Python -- readable enough to learn from, robust enough to use.
 
