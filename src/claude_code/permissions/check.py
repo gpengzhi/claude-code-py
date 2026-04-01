@@ -138,6 +138,8 @@ def has_permissions_to_use_tool(
         "EnterPlanMode", "ExitPlanMode", "AskUserQuestion",
         # Sub-agent and skill execution (delegates to the same permission system)
         "Agent", "Skill",
+        # Web fetch (read-only, no side effects)
+        "WebFetch",
     }
     if tool_name in AUTO_ALLOW_TOOLS:
         return PermissionAllowDecision(updated_input=tool_input)
