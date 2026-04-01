@@ -38,15 +38,15 @@ claude-code-py
 
 ## What's Inside
 
-**16 tools** matching Claude Code's tool names and schemas -- Bash (with 15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, Agent, TaskCreate/Get/Update/List, EnterPlanMode, ExitPlanMode, AskUserQuestion, Skill.
-
-**Streaming API layer** -- prompt caching, extended thinking, cost tracking, retry with backoff, multi-provider support (Anthropic, Bedrock, Vertex).
-
-**Context engineering** -- 11-section system prompt matching the TypeScript original, CLAUDE.md loading, git context injection, persistent memory across sessions.
-
-**Safety** -- 5 permission modes with wildcard rules, Pre/PostToolUse hooks, cost threshold ($5 warn, $25 stop), auto-compact when approaching context limits.
-
-**MCP client** -- stdio transport for Model Context Protocol servers, with tool discovery and execution.
+| Layer | What It Does | Key Files |
+|---|---|---|
+| **16 Tools** | Bash (15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, Agent, Task management, Plan mode, Skills | `tools/` |
+| **Agentic Loop** | Stream response, execute tools, recover from errors, auto-compact | `query/loop.py` |
+| **Streaming API** | Prompt caching, extended thinking, cost tracking, retry with backoff | `services/api/claude.py` |
+| **Context Engineering** | 11-section system prompt, CLAUDE.md, git context, persistent memory | `context/` |
+| **Permissions & Safety** | 5 modes with wildcard rules, Pre/PostToolUse hooks, cost threshold | `permissions/`, `hooks/` |
+| **MCP Client** | Connect to external tool servers via stdio, discover and call tools | `services/mcp/` |
+| **Interactive TUI** | Streaming display, inline tool results, status bar, session persistence | `tui/` |
 
 ## Reading the Code
 
