@@ -49,12 +49,18 @@ class REPLScreen(Screen):
         self._tools = tools or get_tools()
         self._permission_mode = permission_mode
         self._session_id = resume_session or generate_session_id()
+        self._awaiting_permission = False
+        self._permission_event: asyncio.Event | None = None
+        self._permission_result = False
 
-        # Permission callback that routes through the TUI dialog
-        async def _permission_callback(
-            tool_name: str, tool_input: dict[str, Any], message: str,
-        ) -> bool:
-            return await self._ask_permission(tool_name, tool_input, message)
+        # Permission callback -- only set if not in bypass mode
+        perm_callback = None
+        if permission_mode != "bypassPermissions":
+            async def _permission_callback(
+                tool_name: str, tool_input: dict[str, Any], message: str,
+            ) -> bool:
+                return await self._ask_permission(tool_name, tool_input, message)
+            perm_callback = _permission_callback
 
         self._engine = QueryEngine(
             model=model,
@@ -62,7 +68,7 @@ class REPLScreen(Screen):
             max_tokens=max_tokens,
             tools=self._tools,
             hooks_config=hooks_config,
-            permission_callback=_permission_callback,
+            permission_callback=perm_callback,
             thinking=thinking,
         )
         self._is_querying = False
@@ -97,20 +103,68 @@ class REPLScreen(Screen):
         tool_input: dict[str, Any],
         message: str,
     ) -> bool:
-        """Show permission dialog and wait for user response."""
-        from claude_code.tui.widgets.permission_dialog import PermissionDialog
+        """Show inline permission prompt and wait for y/n response.
 
-        dialog = PermissionDialog(
-            tool_name=tool_name,
-            tool_input=tool_input,
-            message=message,
+        Matches Claude Code's inline permission UX — no modal popup.
+        """
+        # Show the permission request in the message list
+        messages = self.query_one("#message-container", MessageList)
+
+        detail = ""
+        if "command" in tool_input:
+            detail = f": {tool_input['command']}"
+        elif "file_path" in tool_input:
+            detail = f": {tool_input['file_path']}"
+
+        messages.add_system_message(
+            f"Allow {tool_name}{detail}? (y to allow, n to deny)",
+            level="warning",
         )
-        result = await self.app.push_screen_wait(dialog)
-        return bool(result)
+
+        # Swap input to permission mode — wait for y/n
+        self._permission_event = asyncio.Event()
+        self._permission_result = False
+        self._awaiting_permission = True
+
+        try:
+            prompt_input = self.query_one("#input-area", PromptInput)
+            prompt_input.set_disabled(False)
+            from textual.widgets import Input
+            input_widget = self.query_one("#prompt-text-input", Input)
+            input_widget.placeholder = "y/n"
+            input_widget.focus()
+        except Exception:
+            pass
+
+        # Wait for the user to respond
+        await self._permission_event.wait()
+
+        # Restore normal input
+        self._awaiting_permission = False
+        try:
+            from textual.widgets import Input
+            input_widget = self.query_one("#prompt-text-input", Input)
+            input_widget.placeholder = "Type a message... (Ctrl+D to quit)"
+        except Exception:
+            pass
+
+        return self._permission_result
 
     async def on_prompt_submitted(self, event: PromptSubmitted) -> None:
         """Handle user prompt submission."""
         text = event.text
+
+        # Handle permission response (y/n)
+        if self._awaiting_permission and self._permission_event:
+            response = text.strip().lower()
+            self._permission_result = response in ("y", "yes")
+            messages = self.query_one("#message-container", MessageList)
+            messages.add_system_message(
+                "Allowed." if self._permission_result else "Denied.",
+                level="info" if self._permission_result else "warning",
+            )
+            self._permission_event.set()
+            return
 
         # Handle slash commands
         if text.startswith("/"):

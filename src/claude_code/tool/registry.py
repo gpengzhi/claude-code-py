@@ -25,7 +25,6 @@ def get_all_base_tools() -> list[Tool]:
 
     # Extended tools
     from claude_code.tools.web_fetch_tool.web_fetch_tool import WebFetchTool
-    from claude_code.tools.web_search_tool.web_search_tool import WebSearchTool
     from claude_code.tools.agent_tool.agent_tool import AgentTool
     from claude_code.tools.task_tools.task_tools import TaskCreateTool, TaskGetTool, TaskUpdateTool, TaskListTool
     from claude_code.tools.plan_tools.enter_plan_mode import EnterPlanModeTool
@@ -43,7 +42,6 @@ def get_all_base_tools() -> list[Tool]:
         GrepTool(),
         # Extended tools
         WebFetchTool(),
-        WebSearchTool(),
         AgentTool(),
         TaskCreateTool(),
         TaskGetTool(),

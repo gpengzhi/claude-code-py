@@ -38,7 +38,7 @@ claude-code-py
 
 ## What's Inside
 
-**17 tools** matching Claude Code's tool names and schemas -- Bash (with 15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Agent, TaskCreate/Get/Update/List, EnterPlanMode, ExitPlanMode, AskUserQuestion, Skill.
+**16 tools** matching Claude Code's tool names and schemas -- Bash (with 15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, Agent, TaskCreate/Get/Update/List, EnterPlanMode, ExitPlanMode, AskUserQuestion, Skill.
 
 **Streaming API layer** -- prompt caching, extended thinking, cost tracking, retry with backoff, multi-provider support (Anthropic, Bedrock, Vertex).
 
