@@ -91,7 +91,3 @@ Contributions that improve fidelity to the original Claude Code behavior are esp
 ```bash
 pytest conformance/ -v
 ```
-
-## License
-
-MIT
