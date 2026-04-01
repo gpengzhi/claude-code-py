@@ -43,7 +43,7 @@ claude-code-py
 | **16 Tools** | Bash (15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, Agent, Task management, Plan mode, Skills | `tools/` |
 | **Agentic Loop** | Stream response, execute tools, recover from errors, auto-compact | `query/loop.py` |
 | **Streaming API** | Prompt caching, extended thinking, cost tracking, retry with backoff | `services/api/claude.py` |
-| **Context Engineering** | 11-section system prompt, CLAUDE.md, git context, persistent memory | `context/` |
+| **Context Engineering** | system prompt (up to 13 sections), CLAUDE.md, git context, persistent memory | `context/` |
 | **Permissions & Safety** | 5 modes with wildcard rules, Pre/PostToolUse hooks, cost threshold | `permissions/`, `hooks/` |
 | **MCP Client** | Connect to external tool servers via stdio, discover and call tools | `services/mcp/` |
 | **Interactive TUI** | Streaming display, inline tool results, status bar, session persistence | `tui/` |
@@ -60,7 +60,7 @@ claude-code-py
 - [`tools/bash_tool/security.py`](src/claude_code/tools/bash_tool/security.py) -- 15 security checks
 
 **Context engineering:**
-- [`context/system_prompt.py`](src/claude_code/context/system_prompt.py) -- 11-section system prompt
+- [`context/system_prompt.py`](src/claude_code/context/system_prompt.py) -- system prompt (up to 13 sections)
 - [`services/api/claude.py`](src/claude_code/services/api/claude.py) -- Streaming API with prompt caching
 - [`services/compact/compact.py`](src/claude_code/services/compact/compact.py) -- Auto-compact
 

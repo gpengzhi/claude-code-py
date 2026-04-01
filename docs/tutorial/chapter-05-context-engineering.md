@@ -1,10 +1,10 @@
 # Chapter 5: Context Engineering
 
-The system prompt is the single most important input to the model. It determines how the agent behaves, what rules it follows, and what it knows about the user's environment. In this chapter, you'll learn how the system prompt is assembled from 13 distinct sections, how project-specific context flows in through CLAUDE.md files, and how the memory system gives the agent persistence across sessions.
+The system prompt is the single most important input to the model. It determines how the agent behaves, what rules it follows, and what it knows about the user's environment. In this chapter, you'll learn how the system prompt is assembled from up to 13 sections, how project-specific context flows in through CLAUDE.md files, and how the memory system gives the agent persistence across sessions.
 
 ## What You'll Learn
 
-- How the system prompt is assembled from 11+ sections and why each exists
+- How the system prompt is assembled from up to 13 sections and why each exists
 - CLAUDE.md: the three-level hierarchy (user > project > directory)
 - Git context injection (branch, status, recent commits)
 - The persistent memory system (files with YAML frontmatter, MEMORY.md index)
@@ -306,7 +306,6 @@ The production version of this chapter lives in:
 - [`src/claude_code/context/user_context.py`](../../src/claude_code/context/user_context.py) -- CLAUDE.md loading
 - [`src/claude_code/memory/memdir.py`](../../src/claude_code/memory/memdir.py) -- Memory file management
 - [`src/claude_code/memory/paths.py`](../../src/claude_code/memory/paths.py) -- Memory directory resolution
-- [`src/claude_code/memory/types.py`](../../src/claude_code/memory/types.py) -- Memory type definitions
 
 ---
 

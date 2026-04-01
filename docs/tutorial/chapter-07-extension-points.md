@@ -259,31 +259,24 @@ Here is how all the extension points relate:
 │                   Agent                        │
 │                                                │
 │  ┌──────────┐  ┌──────────┐  ┌──────────────┐ │
-│  │  Slash   │  │  Skills  │  │   Plugins    │ │
+│  │  Slash   │  │  Skills  │  │  MCP Client  │ │
 │  │  Cmds    │  │          │  │              │ │
-│  │          │  │ .claude/  │  │  git repos   │ │
-│  │ /help    │  │ skills/  │  │  containing: │ │
-│  │ /cost    │  │          │  │  - skills    │ │
-│  │ /compact │  │ YAML +   │  │  - hooks     │ │
-│  │ /model   │  │ markdown │  │  - MCP cfgs  │ │
-│  └──────────┘  └──────────┘  └──────┬───────┘ │
-│                                      │         │
-│                              ┌───────▼───────┐ │
-│                              │  MCP Client   │ │
-│                              │               │ │
-│                              │ stdio / HTTP  │ │
-│                              │ connections   │ │
-│                              └───────────────┘ │
+│  │          │  │ .claude/  │  │  stdio       │ │
+│  │ /help    │  │ skills/  │  │  connections  │ │
+│  │ /cost    │  │          │  │  to external │ │
+│  │ /compact │  │ YAML +   │  │  tool        │ │
+│  │ /model   │  │ markdown │  │  servers     │ │
+│  └──────────┘  └──────────┘  └──────────────┘ │
 │                                                │
 │  ┌───────────────────────────────────────────┐ │
 │  │             Hook System                   │ │
-│  │  PreToolUse / PostToolUse / SessionStart  │ │
+│  │  PreToolUse / PostToolUse                 │ │
 │  │  (runs shell commands, webhooks)          │ │
 │  └───────────────────────────────────────────┘ │
 └────────────────────────────────────────────────┘
 ```
 
-Slash commands are for simple, immediate operations. Skills are for model-driven workflows described in natural language. Plugins bundle multiple extensions for distribution. MCP connects to external systems. Hooks intercept and modify behavior at the tool level.
+Slash commands are for simple, immediate operations. Skills are for model-driven workflows described in natural language. MCP connects to external tool servers. Hooks intercept and modify behavior at the tool level.
 
 ## Try It
 

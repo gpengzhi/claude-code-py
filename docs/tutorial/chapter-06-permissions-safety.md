@@ -407,7 +407,7 @@ Now every Bash command the agent runs is logged to `/tmp/agent-audit.log`.
 
 The production version of this chapter lives in:
 - [`src/claude_code/permissions/check.py`](../../src/claude_code/permissions/check.py) -- Permission pipeline and rule matching
-- [`src/claude_code/permissions/modes.py`](../../src/claude_code/permissions/modes.py) -- Permission mode definitions
+- [`src/claude_code/types/permissions.py`](../../src/claude_code/types/permissions.py) -- Permission mode and type definitions
 - [`src/claude_code/hooks/config.py`](../../src/claude_code/hooks/config.py) -- Hook configuration parsing
 - [`src/claude_code/hooks/runner.py`](../../src/claude_code/hooks/runner.py) -- Hook execution engine
 - [`src/claude_code/hooks/events.py`](../../src/claude_code/hooks/events.py) -- Hook event types
