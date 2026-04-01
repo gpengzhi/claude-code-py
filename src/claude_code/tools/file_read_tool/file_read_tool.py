@@ -96,6 +96,23 @@ class FileReadTool(Tool):
         if not file_path.is_absolute():
             file_path = context.cwd / file_path
 
+        # Dedup cache: if same file+range was read recently and mtime unchanged, return stub
+        state = context.read_file_state.get(str(file_path))
+        if state and file_path.exists():
+            try:
+                current_mtime = file_path.stat().st_mtime
+                if current_mtime == state.get("mtime"):
+                    same_range = (
+                        state.get("offset") == (args.offset or 0)
+                        and state.get("limit") == (args.limit or 2000)
+                    )
+                    if same_range:
+                        return ToolResult(
+                            data=f"<file_unchanged path=\"{args.file_path}\" />"
+                        )
+            except OSError:
+                pass
+
         # Check if file exists
         if not file_path.exists():
             # Try to suggest similar files
@@ -160,10 +177,12 @@ class FileReadTool(Tool):
 
         result = "\n".join(numbered_lines)
 
-        # Track in readFileState for edit validation
+        # Track in readFileState for edit validation and dedup
         context.read_file_state[str(file_path)] = {
             "mtime": file_path.stat().st_mtime,
             "partial": args.offset is not None or args.limit is not None,
+            "offset": args.offset or 0,
+            "limit": args.limit or 2000,
         }
 
         return ToolResult(data=result)

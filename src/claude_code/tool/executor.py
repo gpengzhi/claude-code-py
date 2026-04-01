@@ -1,7 +1,7 @@
 """Tool executor -- the execution pipeline.
 
 Maps to src/services/tools/toolExecution.ts in the TypeScript codebase.
-Handles: input parsing -> validation -> permission check -> tool.call() -> result.
+Handles: input parsing -> validation -> PreToolUse hooks -> permission check -> call -> PostToolUse hooks -> result.
 """
 
 from __future__ import annotations
@@ -23,10 +23,18 @@ async def execute_tool(
     tool_input: dict[str, Any],
     tool_use_id: str,
     context: ToolUseContext,
+    hooks_config: dict | None = None,
 ) -> ToolResultBlock:
     """Execute a single tool with full pipeline.
 
-    Pipeline: parse input -> validate -> check permissions -> call -> format result.
+    Pipeline matches the TS version:
+    1. Parse input (Pydantic validation)
+    2. Custom validation (tool.validate_input)
+    3. Run PreToolUse hooks
+    4. Check permissions
+    5. Execute (tool.call)
+    6. Run PostToolUse hooks
+    7. Format and truncate result
     """
     # 1. Parse and validate input via Pydantic
     try:
@@ -49,10 +57,44 @@ async def execute_tool(
             is_error=True,
         )
 
-    # 3. Permission check (basic for now -- full system in Phase 4)
-    # In print mode / bypass mode, we allow everything
+    # 3. Run PreToolUse hooks
+    if hooks_config:
+        from claude_code.hooks.events import HookEvent
+        from claude_code.hooks.runner import run_hooks_for_event
 
-    # 4. Execute tool
+        hook_results = await run_hooks_for_event(
+            event=HookEvent.PRE_TOOL_USE,
+            hooks_config=hooks_config,
+            tool_name=tool.name,
+            tool_input=tool_input,
+            cwd=str(context.cwd),
+        )
+
+        for hr in hook_results:
+            if hr.is_blocking:
+                return ToolResultBlock(
+                    tool_use_id=tool_use_id,
+                    content=f"Blocked by hook: {hr.blocking_error or hr.message}",
+                    is_error=True,
+                )
+            # Apply updated input from hooks
+            if hr.updated_input:
+                try:
+                    parsed_input = tool.input_model.model_validate(hr.updated_input)
+                    tool_input = hr.updated_input
+                except ValidationError:
+                    pass  # Keep original input if hook's update is invalid
+
+    # 4. Permission check
+    perm_result = await tool.check_permissions(parsed_input, context)
+    if hasattr(perm_result, 'behavior') and perm_result.behavior == "deny":
+        return ToolResultBlock(
+            tool_use_id=tool_use_id,
+            content=f"Permission denied: {getattr(perm_result, 'message', 'Tool not allowed')}",
+            is_error=True,
+        )
+
+    # 5. Execute tool
     try:
         result = await tool.call(parsed_input, context)
     except asyncio.CancelledError:
@@ -69,7 +111,20 @@ async def execute_tool(
             is_error=True,
         )
 
-    # 5. Format result
+    # 6. Run PostToolUse hooks
+    if hooks_config:
+        from claude_code.hooks.events import HookEvent
+        from claude_code.hooks.runner import run_hooks_for_event
+
+        await run_hooks_for_event(
+            event=HookEvent.POST_TOOL_USE,
+            hooks_config=hooks_config,
+            tool_name=tool.name,
+            tool_input=tool_input,
+            cwd=str(context.cwd),
+        )
+
+    # 7. Format result
     formatted = tool.format_result(result)
     is_error = result.is_error
 
@@ -92,10 +147,11 @@ async def execute_tool(
 async def execute_tools_parallel(
     tool_calls: list[tuple[Tool, dict[str, Any], str]],
     context: ToolUseContext,
+    hooks_config: dict | None = None,
 ) -> list[ToolResultBlock]:
     """Execute multiple read-only tools in parallel."""
     tasks = [
-        execute_tool(tool, input_data, tool_use_id, context)
+        execute_tool(tool, input_data, tool_use_id, context, hooks_config)
         for tool, input_data, tool_use_id in tool_calls
     ]
     return await asyncio.gather(*tasks)
@@ -105,6 +161,7 @@ async def run_tools(
     tool_use_blocks: list[Any],
     tools: list[Tool],
     context: ToolUseContext,
+    hooks_config: dict | None = None,
 ) -> list[ToolResultBlock]:
     """Execute a batch of tool_use blocks, respecting concurrency rules.
 
@@ -135,7 +192,7 @@ async def run_tools(
             )
             continue
 
-        # Try to parse input for concurrency check
+        # Check concurrency safety
         try:
             parsed = tool.input_model.model_validate(tool_input)
             is_safe = tool.is_concurrency_safe(parsed)
@@ -147,16 +204,22 @@ async def run_tools(
         else:
             # Flush any pending parallel batch first
             if parallel_batch:
-                batch_results = await execute_tools_parallel(parallel_batch, context)
+                batch_results = await execute_tools_parallel(
+                    parallel_batch, context, hooks_config
+                )
                 results.extend(batch_results)
                 parallel_batch = []
             # Run serial tool
-            result = await execute_tool(tool, tool_input, tool_use_id, context)
+            result = await execute_tool(
+                tool, tool_input, tool_use_id, context, hooks_config
+            )
             results.append(result)
 
     # Flush remaining parallel batch
     if parallel_batch:
-        batch_results = await execute_tools_parallel(parallel_batch, context)
+        batch_results = await execute_tools_parallel(
+            parallel_batch, context, hooks_config
+        )
         results.extend(batch_results)
 
     return results

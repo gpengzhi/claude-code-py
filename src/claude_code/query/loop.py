@@ -2,6 +2,10 @@
 
 Maps to src/query.ts in the TypeScript codebase.
 Implements the while(true) loop of: call model -> run tools -> append results -> repeat.
+Includes recovery paths matching the TS version:
+- Auto-compact when approaching context limit
+- max_output_tokens recovery (resume mid-thought)
+- Tool result budget truncation
 """
 
 from __future__ import annotations
@@ -20,6 +24,40 @@ from claude_code.types.message import (
 
 logger = logging.getLogger(__name__)
 
+# Recovery constants (matching TS)
+MAX_OUTPUT_TOKENS_RECOVERY_ATTEMPTS = 3
+TOOL_RESULT_BUDGET_CHARS = 800_000  # ~200K tokens
+
+
+def apply_tool_result_budget(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Truncate oversized tool results in older messages to fit budget.
+
+    Maps to applyToolResultBudget() in the TS codebase.
+    Walks messages from newest to oldest, tracking total chars.
+    When budget is exceeded, replaces old tool results with stubs.
+    """
+    total_chars = 0
+    # Walk from end to start
+    for i in range(len(messages) - 1, -1, -1):
+        msg = messages[i]
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            for j, block in enumerate(content):
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    block_content = block.get("content", "")
+                    block_size = len(str(block_content))
+                    total_chars += block_size
+                    if total_chars > TOOL_RESULT_BUDGET_CHARS:
+                        # Replace with stub
+                        messages[i]["content"][j] = {
+                            **block,
+                            "content": "[Tool result truncated to save context space]",
+                        }
+        elif isinstance(content, str):
+            total_chars += len(content)
+
+    return messages
+
 
 async def query_loop(
     messages: list[dict[str, Any]],
@@ -30,6 +68,7 @@ async def query_loop(
     tool_use_context: ToolUseContext | None = None,
     abort_event: asyncio.Event | None = None,
     max_turns: int = 100,
+    hooks_config: dict | None = None,
 ) -> AsyncGenerator[AssistantMessage | dict[str, Any], None]:
     """Core agentic loop.
 
@@ -38,7 +77,10 @@ async def query_loop(
     - max_turns is reached
     - abort_event is set
 
-    Yields AssistantMessage and stream events as they arrive.
+    Recovery paths:
+    - Auto-compact when context is too long
+    - max_output_tokens recovery (up to 3 retries with resume message)
+    - Tool result budget truncation for older messages
     """
     from claude_code.services.compact.compact import AutoCompactTracker
 
@@ -46,6 +88,7 @@ async def query_loop(
     working_messages = list(messages)
     active_tools = tools or []
     compact_tracker = AutoCompactTracker()
+    max_output_recovery_count = 0
 
     while turn_count < max_turns:
         turn_count += 1
@@ -53,6 +96,9 @@ async def query_loop(
         # Check abort
         if abort_event and abort_event.is_set():
             return
+
+        # Apply tool result budget (truncate old results)
+        working_messages = apply_tool_result_budget(working_messages)
 
         # Auto-compact check
         working_messages, did_compact = await compact_tracker.maybe_compact(
@@ -87,6 +133,30 @@ async def query_loop(
         if assistant_message is None:
             return
 
+        # --- Recovery: max_output_tokens ---
+        if (
+            assistant_message.stop_reason == "max_tokens"
+            and not tool_use_blocks
+            and max_output_recovery_count < MAX_OUTPUT_TOKENS_RECOVERY_ATTEMPTS
+        ):
+            max_output_recovery_count += 1
+            logger.info(
+                "max_output_tokens recovery attempt %d/%d",
+                max_output_recovery_count,
+                MAX_OUTPUT_TOKENS_RECOVERY_ATTEMPTS,
+            )
+            # Append assistant message and a "continue" user message
+            working_messages.append(
+                assistant_message.model_dump(exclude_none=True)
+            )
+            working_messages.append({
+                "role": "user",
+                "content": "Your response was cut off. Please continue from where you left off.",
+                "is_meta": True,
+            })
+            yield {"type": "system_event", "event": "max_tokens_recovery", "attempt": max_output_recovery_count}
+            continue
+
         # Append assistant message to working messages
         working_messages.append(
             assistant_message.model_dump(exclude_none=True)
@@ -96,10 +166,13 @@ async def query_loop(
         if not tool_use_blocks:
             return
 
+        # Reset recovery counter on successful tool use
+        max_output_recovery_count = 0
+
         # Execute tools using the executor
         if active_tools and tool_use_context:
             tool_results_blocks = await run_tools(
-                tool_use_blocks, active_tools, tool_use_context
+                tool_use_blocks, active_tools, tool_use_context, hooks_config
             )
             tool_results = [r.model_dump(exclude_none=True) for r in tool_results_blocks]
 
@@ -112,7 +185,6 @@ async def query_loop(
                     "is_error": result_block.is_error,
                 }
         else:
-            # No tools available - return error results
             from claude_code.types.message import ToolResultBlock
 
             tool_results = []

@@ -172,6 +172,38 @@ async def query_model(
     if thinking:
         params["thinking"] = thinking
 
+    # Retry configuration
+    max_retries = 3
+    retry_delay_base = 1.0  # seconds
+
+    for attempt in range(max_retries + 1):
+        try:
+            async for event in _execute_stream(params, model, abort_event):
+                yield event
+            return  # Success -- exit retry loop
+        except Exception as e:
+            from claude_code.services.api.errors import classify_error
+            api_error = classify_error(e)
+
+            if not api_error.retryable or attempt >= max_retries:
+                logger.error("API call failed (attempt %d/%d): %s", attempt + 1, max_retries + 1, e)
+                yield {"type": "api_error", "error": str(e), "error_type": type(e).__name__}
+                return
+
+            delay = retry_delay_base * (2 ** attempt)
+            logger.warning("API call failed (attempt %d/%d), retrying in %.1fs: %s", attempt + 1, max_retries + 1, delay, e)
+            yield {"type": "api_retry", "attempt": attempt + 1, "delay": delay, "error": str(e)}
+            await asyncio.sleep(delay)
+
+
+async def _execute_stream(
+    params: dict[str, Any],
+    model: str,
+    abort_event: asyncio.Event | None = None,
+) -> AsyncGenerator[AssistantMessage | dict[str, Any], None]:
+    """Execute a single streaming API call (no retry)."""
+    client = get_anthropic_client()
+
     # Track timing
     start_time = time.monotonic()
     ttft_ms: float | None = None

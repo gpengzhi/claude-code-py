@@ -134,13 +134,24 @@ class FileEditTool(Tool):
             "partial": False,
         }
 
-        # Generate a simple diff summary
-        if args.replace_all:
+        # Generate a unified diff (matching TS behavior)
+        import difflib
+
+        old_lines = content.splitlines(keepends=True)
+        new_lines = new_content.splitlines(keepends=True)
+        diff = difflib.unified_diff(
+            old_lines,
+            new_lines,
+            fromfile=f"a/{args.file_path}",
+            tofile=f"b/{args.file_path}",
+            n=3,
+        )
+        diff_str = "".join(diff)
+
+        if diff_str:
+            return ToolResult(data=diff_str)
+        elif args.replace_all:
             count = content.count(old_string)
-            return ToolResult(
-                data=f"Replaced {count} occurrence(s) in {args.file_path}"
-            )
+            return ToolResult(data=f"Replaced {count} occurrence(s) in {args.file_path}")
         else:
-            return ToolResult(
-                data=f"Successfully edited {args.file_path}"
-            )
+            return ToolResult(data=f"Successfully edited {args.file_path}")

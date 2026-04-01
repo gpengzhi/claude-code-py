@@ -37,6 +37,37 @@ class BashInput(BaseModel):
     )
 
 
+# Commands known to be read-only (safe for parallel execution)
+READ_ONLY_COMMANDS = {
+    "cat", "head", "tail", "less", "more", "wc", "grep", "rg", "ag", "ack",
+    "find", "fd", "ls", "tree", "du", "df", "file", "stat", "which", "where",
+    "whereis", "type", "realpath", "readlink", "basename", "dirname",
+    "echo", "printf", "date", "uname", "hostname", "whoami", "id", "env",
+    "printenv", "pwd", "git status", "git log", "git diff", "git show",
+    "git branch", "git tag", "git remote", "git rev-parse", "git ls-files",
+    "python --version", "python3 --version", "node --version", "npm --version",
+    "cargo --version", "go version", "java --version", "ruby --version",
+}
+
+
+def _is_read_only_command(command: str) -> bool:
+    """Check if a command is known to be read-only."""
+    cmd = command.strip()
+
+    # Check exact matches and prefix matches
+    for ro_cmd in READ_ONLY_COMMANDS:
+        if cmd == ro_cmd or cmd.startswith(ro_cmd + " "):
+            return True
+
+    # Pipe chains: if ALL commands in the pipe are read-only, the whole thing is
+    if "|" in cmd and ">" not in cmd and ">>" not in cmd:
+        parts = [p.strip() for p in cmd.split("|")]
+        if all(_is_read_only_command(p) for p in parts):
+            return True
+
+    return False
+
+
 class BashTool(Tool):
     name = "Bash"
     aliases = ["bash", "shell"]
@@ -54,7 +85,9 @@ class BashTool(Tool):
         )
 
     def is_read_only(self, input_data: BaseModel) -> bool:
-        # Conservative: assume all bash commands are not read-only
+        """Detect if command is read-only (matches TS readOnlyValidation.ts)."""
+        if isinstance(input_data, BashInput):
+            return _is_read_only_command(input_data.command)
         return False
 
     def is_concurrency_safe(self, input_data: BaseModel) -> bool:
