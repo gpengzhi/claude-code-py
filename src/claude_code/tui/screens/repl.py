@@ -78,10 +78,10 @@ class REPLScreen(Screen):
                 self._engine.messages.append(msg)
 
     def compose(self) -> ComposeResult:
-        yield MessageList(id="message-container")
-        yield Spinner(id="spinner-area")
-        yield PromptInput(id="input-area")
-        yield StatusBar(id="status-bar")
+        yield MessageList(id="message-container")  # Fills available space
+        yield Spinner(id="spinner-area")            # Above input when visible
+        yield PromptInput(id="input-area")          # Pinned above status bar
+        yield StatusBar(id="status-bar")            # Very bottom
 
     def on_mount(self) -> None:
         try:

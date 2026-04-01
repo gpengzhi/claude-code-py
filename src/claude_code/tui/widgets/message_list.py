@@ -23,11 +23,15 @@ class MessageList(VerticalScroll):
         self._streaming_widget: Static | None = None
 
     def compose(self) -> ComposeResult:
-        yield Static(
-            Text.from_markup("[bold purple]claude-code-py[/] v0.1.0\n"
-                           "Type your message below. Ctrl+C to interrupt, Ctrl+D to quit.\n"),
-            classes="message-row",
-        )
+        welcome = Text()
+        welcome.append("claude-code-py", style="bold #cba6f7")
+        welcome.append(" v0.1.0\n", style="dim")
+        welcome.append("Type your message below. ", style="#6c7086")
+        welcome.append("Ctrl+C", style="bold #6c7086")
+        welcome.append(" to interrupt, ", style="#6c7086")
+        welcome.append("Ctrl+D", style="bold #6c7086")
+        welcome.append(" to quit.", style="#6c7086")
+        yield Static(welcome, classes="message-row")
 
     def add_user_message(self, text: str) -> None:
         content = Text()
@@ -61,15 +65,21 @@ class MessageList(VerticalScroll):
         self.scroll_end(animate=False)
 
     def add_tool_result(self, tool_use_id: str, content: str, is_error: bool = False) -> None:
+        # Collapse whitespace: strip, collapse blank lines, limit to 5 lines for display
+        trimmed = "\n".join(
+            line for line in content.strip().splitlines()
+            if line.strip()
+        )
+        lines = trimmed.splitlines()
+        if len(lines) > 5:
+            trimmed = "\n".join(lines[:5]) + f"\n  ... ({len(lines)} lines, {len(content)} chars total)"
+
         result = Text()
         if is_error:
             result.append("  Error: ", style="bold red")
-            result.append(content[:500], style="red")
+            result.append(trimmed[:300], style="red")
         else:
-            display_content = content[:500]
-            if len(content) > 500:
-                display_content += f"\n  ... ({len(content)} chars total)"
-            result.append(f"  {display_content}", style="dim")
+            result.append(f"  {trimmed[:300]}", style="dim")
         self.mount(Static(result, classes="message-row tool-result-message"))
         self.scroll_end(animate=False)
 

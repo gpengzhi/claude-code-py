@@ -16,20 +16,43 @@ from claude_code.tool.base import Tool
 
 CSS = """\
 Screen {
-    background: $surface;
+    background: #1e1e2e;
+    layout: vertical;
 }
 
+/* Messages fill all available space */
 #message-container {
     height: 1fr;
+    min-height: 3;
     overflow-y: auto;
-    padding: 0 1;
+    padding: 1 2;
+    background: #1e1e2e;
 }
 
-#input-area {
-    dock: bottom;
+/* Spinner sits above input when visible */
+#spinner-area {
     height: auto;
-    max-height: 40%;
-    padding: 0 1;
+    padding: 0 2;
+    background: #1e1e2e;
+    display: none;
+}
+
+#spinner-area.visible {
+    display: block;
+}
+
+/* Input area pinned to bottom */
+#input-area {
+    height: auto;
+    max-height: 3;
+    padding: 0 2;
+    background: #1e1e2e;
+}
+
+.prompt-prefix {
+    width: 2;
+    height: 1;
+    color: #a6e3a1;
 }
 
 #prompt-text-input {
@@ -38,6 +61,7 @@ Screen {
     background: #1e1e2e;
     color: #cdd6f4;
     border: none;
+    padding: 0;
 }
 
 #prompt-text-input:focus {
@@ -46,59 +70,43 @@ Screen {
     color: #cdd6f4;
 }
 
-.prompt-prefix {
-    width: auto;
-    height: 1;
-    padding: 0;
-}
-
+/* Status bar at very bottom */
 #status-bar {
-    dock: bottom;
     height: 1;
-    background: $primary-background-darken-1;
-    color: $text-muted;
-    padding: 0 1;
+    background: #181825;
+    color: #6c7086;
+    padding: 0 2;
 }
 
-#spinner-area {
-    dock: bottom;
-    height: auto;
-    padding: 0 1;
-    display: none;
-}
-
-#spinner-area.visible {
-    display: block;
-}
-
+/* Message styles */
 .message-row {
     margin: 0 0 1 0;
 }
 
 .user-message {
-    color: $text;
+    color: #cdd6f4;
 }
 
 .assistant-message {
-    color: $accent;
+    color: #cdd6f4;
 }
 
 .tool-use-message {
-    color: $warning;
+    color: #89b4fa;
     margin: 0 0 0 2;
 }
 
 .tool-result-message {
-    color: $text-muted;
+    color: #6c7086;
     margin: 0 0 0 2;
 }
 
 .error-message {
-    color: $error;
+    color: #f38ba8;
 }
 
 .thinking-message {
-    color: $warning;
+    color: #f9e2af;
     text-style: italic;
 }
 """

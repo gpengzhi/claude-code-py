@@ -43,6 +43,12 @@ class PromptInput(Widget):
             ),
         )
 
+    def on_key(self, event: object) -> None:
+        """Handle Ctrl+D to quit."""
+        key = getattr(event, "key", "")
+        if key == "ctrl+d":
+            self.app.exit()
+
     @on(Input.Submitted, "#prompt-text-input")
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Handle Enter key."""
