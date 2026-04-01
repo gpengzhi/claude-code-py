@@ -93,8 +93,13 @@ async def query_loop(
     while turn_count < max_turns:
         turn_count += 1
 
-        # Check abort
+        # Check abort -- emit interruption message (matches TS createUserInterruptionMessage)
         if abort_event and abort_event.is_set():
+            yield {
+                "type": "system_event",
+                "event": "aborted",
+                "message": "The user has interrupted the conversation.",
+            }
             return
 
         # Apply tool result budget (truncate old results)
@@ -161,7 +166,11 @@ async def query_loop(
             )
             working_messages.append({
                 "role": "user",
-                "content": "Your response was cut off. Please continue from where you left off.",
+                "content": (
+                    "Output token limit hit. Resume directly — no apology, no recap of what "
+                    "you were doing. Pick up mid-thought if that is where the cut happened. "
+                    "Break remaining work into smaller pieces."
+                ),
                 "is_meta": True,
             })
             yield {"type": "system_event", "event": "max_tokens_recovery", "attempt": max_output_recovery_count}

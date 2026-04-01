@@ -98,6 +98,12 @@ class GrepTool(Tool):
             cmd.append("--count")
         # content mode is default (no flag)
 
+        # Search hidden files (matches TS --hidden flag)
+        cmd.append("--hidden")
+
+        # Limit line length to prevent base64/minified lines flooding output
+        cmd.extend(["--max-columns", "500"])
+
         # VCS exclusions
         for vcs_dir in VCS_DIRS:
             cmd.extend(["--glob", f"!{vcs_dir}/"])
@@ -120,8 +126,11 @@ class GrepTool(Tool):
         if args.multiline:
             cmd.extend(["-U", "--multiline-dotall"])
 
-        # Pattern and path
-        cmd.append(args.pattern)
+        # Pattern -- use -e when pattern starts with - to avoid flag confusion
+        if args.pattern.startswith("-"):
+            cmd.extend(["-e", args.pattern])
+        else:
+            cmd.append(args.pattern)
         cmd.append(search_path)
 
         try:

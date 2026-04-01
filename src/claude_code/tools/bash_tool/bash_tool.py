@@ -160,10 +160,19 @@ class BashTool(Tool):
 
             output = "\n".join(parts) if parts else "(no output)"
 
-            return ToolResult(
-                data=output,
-                is_error=proc.returncode != 0 and proc.returncode is not None,
+            # Interpret exit code (matches TS interpretCommandResult):
+            # Some commands have non-zero exit but aren't errors:
+            # - grep/rg exit 1 = no matches (not an error)
+            # - diff exit 1 = files differ (not an error)
+            base_cmd = command.strip().split()[0] if command.strip() else ""
+            non_error_exit_1 = base_cmd in ("grep", "rg", "egrep", "fgrep", "diff", "cmp")
+            is_error = (
+                proc.returncode is not None
+                and proc.returncode != 0
+                and not (proc.returncode == 1 and non_error_exit_1)
             )
+
+            return ToolResult(data=output, is_error=is_error)
 
         except FileNotFoundError:
             return ToolResult(

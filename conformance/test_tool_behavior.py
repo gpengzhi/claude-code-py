@@ -73,13 +73,13 @@ class TestFileReadBehavior:
 
     @pytest.mark.asyncio
     async def test_offset_1_based(self, ctx: ToolUseContext) -> None:
-        """TS uses 0-based offset but displays 1-based line numbers."""
+        """TS uses 1-based offset: offset=2 starts at line 2."""
         f = ctx.cwd / "test.txt"
         f.write_text("line1\nline2\nline3\nline4\n")
         tool = get_tool("Read")
         from claude_code.tools.file_read_tool.file_read_tool import FileReadInput
         result = await tool.call(FileReadInput(file_path=str(f), offset=2, limit=1), ctx)
-        assert "line3" in result.data
+        assert "line2" in result.data
         assert "line1" not in result.data
 
     @pytest.mark.asyncio

@@ -39,7 +39,7 @@ class FileReadInput(BaseModel):
     offset: int | None = Field(
         default=None,
         ge=0,
-        description="Line number to start reading from (0-indexed)",
+        description="The line number to start reading from. Only provide if the file is too large to read at once",
     )
     limit: int | None = Field(
         default=None,
@@ -326,12 +326,15 @@ class FileReadTool(Tool):
             )
 
         lines = content.split("\n")
-        offset = args.offset or 0
+        # TS uses 1-based offset (default=1, offset=0 means "from beginning")
+        raw_offset = args.offset if args.offset is not None else 1
+        line_offset = 0 if raw_offset == 0 else raw_offset - 1
         limit = args.limit or 2000
-        lines = lines[offset:offset + limit]
+        lines = lines[line_offset:line_offset + limit]
 
-        # Format with line numbers (cat -n style)
-        numbered = [f"{i + offset + 1}\t{line}" for i, line in enumerate(lines)]
+        # Format with line numbers (cat -n style, 1-based)
+        start_line = max(raw_offset, 1)
+        numbered = [f"{i + start_line}\t{line}" for i, line in enumerate(lines)]
         result = "\n".join(numbered)
 
         context.read_file_state[str(file_path)] = {

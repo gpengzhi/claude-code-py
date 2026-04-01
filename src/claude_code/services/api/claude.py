@@ -180,6 +180,26 @@ def build_tool_schemas(tools: list[Any]) -> list[dict[str, Any]]:
     return schemas
 
 
+def get_beta_headers(model: str) -> list[str]:
+    """Build the beta headers array matching TS getMergedBetas().
+
+    These enable model capabilities that are gated behind beta flags.
+    """
+    betas: list[str] = []
+
+    # Interleaved thinking (enables streaming thinking blocks)
+    betas.append("interleaved-thinking-2025-05-14")
+
+    # Prompt caching
+    betas.append("prompt-caching-2024-07-31")
+
+    # Extended context (1M for supported models)
+    if "opus" in model or "sonnet" in model:
+        betas.append("extended-context-2025-04-15")
+
+    return betas
+
+
 async def query_model(
     messages: list[dict[str, Any]],
     system_prompt: str | list[dict[str, Any]],
@@ -188,12 +208,13 @@ async def query_model(
     tools: list[Any] | None = None,
     abort_event: asyncio.Event | None = None,
     thinking: dict[str, Any] | None = None,
+    temperature: float | None = None,
 ) -> AsyncGenerator[AssistantMessage | dict[str, Any], None]:
     """Stream a response from the Anthropic API.
 
     This is the core API integration point. It:
-    1. Builds the API request parameters
-    2. Makes the streaming API call
+    1. Builds the API request parameters with beta headers
+    2. Makes the streaming API call with retry
     3. Processes SSE events into AssistantMessage objects
 
     Yields AssistantMessage for each completed content block,
@@ -205,12 +226,17 @@ async def query_model(
     api_messages = build_api_messages(messages)
     api_messages = add_cache_breakpoint_to_messages(api_messages)
 
-    # Build request params (stream is handled by the .stream() method, not a param)
+    # Build request params
     params: dict[str, Any] = {
         "model": model,
         "max_tokens": max_tokens,
         "messages": api_messages,
     }
+
+    # Beta headers (matching TS getMergedBetas)
+    betas = get_beta_headers(model)
+    if betas:
+        params["betas"] = betas
 
     # System prompt with prompt caching
     if isinstance(system_prompt, str) and system_prompt:
@@ -227,6 +253,12 @@ async def query_model(
     # Extended thinking
     if thinking:
         params["thinking"] = thinking
+
+    # Temperature (TS sends 1 when thinking is disabled)
+    if temperature is not None:
+        params["temperature"] = temperature
+    elif not thinking:
+        params["temperature"] = 1
 
     # Retry configuration
     max_retries = 3

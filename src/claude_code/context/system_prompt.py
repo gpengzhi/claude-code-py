@@ -148,8 +148,12 @@ SUMMARIZE_TOOL_RESULTS_SECTION = (
 
 # --- Dynamic sections ---
 
-def get_environment_info(cwd: Path) -> str:
-    """Get environment information section."""
+def get_environment_info(cwd: Path, model: str = "") -> str:
+    """Get environment information section.
+
+    Matches TS computeSimpleEnvInfo which includes model identity,
+    knowledge cutoff, git repo detection, and product info.
+    """
     parts = [
         "# Environment",
         f" - Primary working directory: {cwd}",
@@ -157,7 +161,60 @@ def get_environment_info(cwd: Path) -> str:
         f" - Shell: {os.environ.get('SHELL', '/bin/bash')}",
         f" - OS Version: {platform.platform()}",
     ]
+
+    # Model identity (matches TS "You are powered by the model named X")
+    if model:
+        model_display = model.split("/")[-1] if "/" in model else model
+        parts.append(f" - You are powered by: {model_display}")
+
+    # Knowledge cutoff
+    parts.append(" - Assistant knowledge cutoff is early 2025.")
+
+    # Claude Code product info
+    parts.append(
+        " - Claude Code is available as a CLI, desktop app, and IDE extensions."
+    )
+
     return "\n".join(parts)
+
+
+def get_session_guidance_section(tools: list[Tool]) -> str:
+    """Get session-specific guidance section.
+
+    Matches TS getSessionSpecificGuidanceSection.
+    """
+    tool_names = {t.name for t in tools}
+    lines = ["# Session-specific guidance"]
+
+    lines.append(
+        " - If you do not understand why the user has denied a tool call, "
+        "use the AskUserQuestion to ask them."
+    )
+    lines.append(
+        " - If you need the user to run a shell command themselves "
+        "(e.g., an interactive login like `gcloud auth login`), suggest they type "
+        "`! <command>` in the prompt."
+    )
+
+    if "Agent" in tool_names:
+        lines.append(
+            " - Use the Agent tool with specialized agents when the task at hand "
+            "matches the agent's description. Subagents are valuable for parallelizing "
+            "independent queries."
+        )
+
+    if "Glob" in tool_names or "Grep" in tool_names:
+        lines.append(
+            " - For simple, directed codebase searches use Glob or Grep directly."
+        )
+
+    if "Skill" in tool_names:
+        lines.append(
+            " - /<skill-name> (e.g., /commit) is shorthand for users to invoke a skill. "
+            "Use the Skill tool to execute them."
+        )
+
+    return "\n".join(lines)
 
 
 def get_date_info() -> str:
@@ -191,12 +248,29 @@ async def build_system_prompt(
     include_tools: bool = True,
     include_context: bool = True,
     memory_prompt: str = "",
+    model: str = "",
 ) -> str:
-    """Build the complete system prompt matching the TS version's structure."""
+    """Build the complete system prompt matching the TS version's structure.
+
+    Assembly order matches TS getSystemPrompt():
+    1. Intro
+    2. # System
+    3. # Doing tasks
+    4. # Executing actions with care
+    5. # Using your tools
+    6. # Tone and style
+    7. # Output efficiency
+    --- dynamic boundary ---
+    8. # Session-specific guidance
+    9. Summarize tool results
+    10. # Environment (with model identity)
+    11. Date
+    12. # User Context (CLAUDE.md)
+    13. # Memory
+    """
     sections: list[str] = []
 
     if custom_system_prompt:
-        # Custom system prompt replaces the intro but keeps behavioral sections
         sections.append(custom_system_prompt)
     else:
         sections.append(get_intro_section())
@@ -209,11 +283,18 @@ async def build_system_prompt(
     sections.append(get_tone_and_style_section())
     sections.append(get_output_efficiency_section())
 
+    # --- Dynamic sections (session-scoped, not globally cacheable) ---
+
+    # Session guidance (agent tools, skill commands, etc.)
+    sections.append(get_session_guidance_section(tools))
+
     # Summarize tool results instruction
     sections.append(SUMMARIZE_TOOL_RESULTS_SECTION)
 
-    # Dynamic sections
-    sections.append(get_environment_info(cwd))
+    # Environment (with model identity, knowledge cutoff)
+    sections.append(get_environment_info(cwd, model=model))
+
+    # Date
     sections.append(get_date_info())
 
     # User context (CLAUDE.md files)

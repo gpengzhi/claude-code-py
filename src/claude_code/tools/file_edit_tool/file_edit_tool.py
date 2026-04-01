@@ -103,12 +103,17 @@ class FileEditTool(Tool):
         except OSError:
             pass
 
-        # Must read first
+        # Must read first (and not a partial read)
         state = context.read_file_state.get(str(file_path))
         if state is None:
             return (
                 f"You must read the file before editing it. "
                 f"Use the Read tool to read {input_data.file_path} first."
+            )
+        if state.get("partial"):
+            return (
+                f"File was only partially read (with offset/limit). "
+                f"Read the full file before editing: {input_data.file_path}"
             )
 
         # Stale file check
