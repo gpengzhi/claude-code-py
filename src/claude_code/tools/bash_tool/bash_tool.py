@@ -93,6 +93,20 @@ class BashTool(Tool):
     def is_concurrency_safe(self, input_data: BaseModel) -> bool:
         return self.is_read_only(input_data)
 
+    async def validate_input(
+        self,
+        input_data: BaseModel,
+        context: ToolUseContext,
+    ) -> str | None:
+        """Run security checks before execution."""
+        assert isinstance(input_data, BashInput)
+        from claude_code.tools.bash_tool.security import run_security_checks
+
+        result = run_security_checks(input_data.command)
+        if result.blocked:
+            return f"Security check failed ({result.check_id}): {result.message}"
+        return None
+
     async def call(
         self,
         args: BaseModel,
