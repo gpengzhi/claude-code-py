@@ -48,6 +48,8 @@ class ToolUseContext:
     agent_type: str | None = None
     # Async callback for permission "ask" decisions; if None, defaults to deny
     permission_callback: PermissionCallback | None = None
+    # Async callback for AskUserQuestion: receives (formatted_question) -> user_response_str
+    user_question_callback: Any | None = None
     # Shared mutable app state -- direct reference, no React-style updater
     _app_state: Any = field(default=None)
 

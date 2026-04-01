@@ -52,15 +52,16 @@ class REPLScreen(Screen):
         self._awaiting_permission = False
         self._permission_event: asyncio.Event | None = None
         self._permission_result = False
+        self._awaiting_question = False
+        self._question_event: asyncio.Event | None = None
+        self._question_response = ""
 
-        # Permission callback -- only set if not in bypass mode
-        perm_callback = None
-        if permission_mode != "bypassPermissions":
-            async def _permission_callback(
-                tool_name: str, tool_input: dict[str, Any], message: str,
-            ) -> bool:
-                return await self._ask_permission(tool_name, tool_input, message)
-            perm_callback = _permission_callback
+        # Permission callback for interactive approval
+        async def _permission_callback(
+            tool_name: str, tool_input: dict[str, Any], message: str,
+        ) -> bool:
+            return await self._ask_permission(tool_name, tool_input, message)
+        perm_callback = _permission_callback
 
         self._engine = QueryEngine(
             model=model,
@@ -70,7 +71,10 @@ class REPLScreen(Screen):
             hooks_config=hooks_config,
             permission_callback=perm_callback,
             thinking=thinking,
+            permission_mode=permission_mode,
         )
+        # Wire user question callback for AskUserQuestion tool
+        self._engine.tool_use_context.user_question_callback = self._ask_user_question
         self._is_querying = False
         self._streaming_text = ""
         self._current_task: asyncio.Task | None = None
@@ -150,9 +154,48 @@ class REPLScreen(Screen):
 
         return self._permission_result
 
+    async def _ask_user_question(self, formatted_question: str) -> str:
+        """Show question inline and wait for user's typed response."""
+        messages = self.query_one("#message-container", MessageList)
+        messages.add_system_message(formatted_question, level="warning")
+
+        self._question_event = asyncio.Event()
+        self._question_response = ""
+        self._awaiting_question = True
+
+        try:
+            prompt_input = self.query_one("#input-area", PromptInput)
+            prompt_input.set_disabled(False)
+            from textual.widgets import Input
+            input_widget = self.query_one("#prompt-text-input", Input)
+            input_widget.placeholder = "Type your answer..."
+            input_widget.focus()
+        except Exception:
+            pass
+
+        await self._question_event.wait()
+        self._awaiting_question = False
+
+        try:
+            from textual.widgets import Input
+            input_widget = self.query_one("#prompt-text-input", Input)
+            input_widget.placeholder = "Type a message... (Ctrl+D to quit)"
+        except Exception:
+            pass
+
+        return self._question_response
+
     async def on_prompt_submitted(self, event: PromptSubmitted) -> None:
         """Handle user prompt submission."""
         text = event.text
+
+        # Handle user question response
+        if getattr(self, '_awaiting_question', False) and self._question_event:
+            self._question_response = text
+            messages = self.query_one("#message-container", MessageList)
+            messages.add_user_message(text)
+            self._question_event.set()
+            return
 
         # Handle permission response (y/n)
         if self._awaiting_permission and self._permission_event:

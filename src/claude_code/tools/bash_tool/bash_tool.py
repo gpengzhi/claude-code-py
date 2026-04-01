@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -130,7 +131,7 @@ class BashTool(Tool):
                 command=command,
                 cwd=cwd,
                 timeout=timeout_s,
-                allow_write_paths=[cwd],
+                allow_write_paths=[cwd, str(Path.home()), "/tmp"],
             )
 
             proc_returncode = returncode

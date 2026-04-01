@@ -152,9 +152,9 @@ def main(
     # the official Claude Code's config, not ours.
     resolved_model = model or os.environ.get("CLAUDE_MODEL") or _resolve_model({"model": "sonnet"})
 
-    # Resolve permission mode -- default to bypass for usability
-    # Users can restrict with --permission-mode if needed
-    resolved_perm_mode = "bypassPermissions"
+    # Resolve permission mode -- default matches Claude Code behavior:
+    # auto-allow reads, ask for writes and bash commands
+    resolved_perm_mode = "default"
     if permission_mode:
         resolved_perm_mode = permission_mode
     elif settings.get("permissionMode"):

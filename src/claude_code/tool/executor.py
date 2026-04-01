@@ -85,14 +85,13 @@ async def execute_tool(
                 except ValidationError:
                     pass  # Keep original input if hook's update is invalid
 
-    # 4. Permission check -- global permission system, then tool-specific
+    # 4. Permission check -- global permission system (matches Claude Code behavior)
     from claude_code.permissions.check import has_permissions_to_use_tool
     if context._app_state is not None:
         perm_result = has_permissions_to_use_tool(
             tool.name, tool_input, context.get_app_state().tool_permission_context,
         )
     else:
-        # No app state configured -- fall back to tool-specific check only
         perm_result = await tool.check_permissions(parsed_input, context)
     if hasattr(perm_result, 'behavior'):
         if perm_result.behavior == "deny":

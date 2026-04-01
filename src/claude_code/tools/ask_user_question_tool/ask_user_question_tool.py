@@ -100,9 +100,15 @@ class AskUserQuestionTool(Tool):
 
         formatted = "\n\n".join(parts)
 
-        # In a real interactive implementation, this would render a dialog
-        # and wait for user input. For now, return the formatted questions
-        # as a signal that user input is needed.
+        # Use the interactive callback if available (TUI mode)
+        if context.user_question_callback:
+            try:
+                response = await context.user_question_callback(formatted)
+                return ToolResult(data=response)
+            except Exception as e:
+                return ToolResult(data=f"Error getting user response: {e}", is_error=True)
+
+        # Non-interactive mode — return formatted questions as context
         return ToolResult(
             data=(
                 "User interaction not available in the current execution context. "

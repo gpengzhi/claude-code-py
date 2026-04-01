@@ -128,8 +128,16 @@ def has_permissions_to_use_tool(
             message=f"Allow {tool_name}? (plan mode)",
         )
 
-    # Default mode: ask for write operations, allow reads
-    if tool_name in ("Read", "Glob", "Grep", "TaskGet", "TaskList", "WebSearch"):
+    # Default mode: auto-allow reads and meta-tools, ask for writes and shell
+    AUTO_ALLOW_TOOLS = {
+        # Read-only tools
+        "Read", "Glob", "Grep",
+        # Task management (in-memory, no side effects)
+        "TaskCreate", "TaskGet", "TaskUpdate", "TaskList",
+        # Mode switching and interaction (no side effects)
+        "EnterPlanMode", "ExitPlanMode", "AskUserQuestion",
+    }
+    if tool_name in AUTO_ALLOW_TOOLS:
         return PermissionAllowDecision(updated_input=tool_input)
 
     return PermissionAskDecision(
