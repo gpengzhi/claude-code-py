@@ -2,13 +2,11 @@
 
 **Learn how to build production-level Claude Code in Python.**
 
-This is a faithful Python reimplementation of [Claude Code](https://claude.ai/code) -- Anthropic's CLI coding agent. We studied the architecture of Claude Code and rebuilt it from scratch so you can understand every system, every edge case, and every design decision that makes a production AI agent work.
-
-If tutorials like [learn-claude-code](https://github.com/shareAI-lab/learn-claude-code) taught you what a harness is in 20 lines -- this repo shows you what the other **9,600 lines** are for.
+This is a faithful Python reimplementation of [Claude Code](https://claude.ai/code) -- Anthropic's CLI coding agent. We studied the architecture of Claude Code and rebuilt it from scratch so you can understand every system, every edge case, and every design decision that makes a production AI coding agent work.
 
 ## Why This Exists
 
-Most "build your own agent" tutorials show you the loop:
+Most "build your own agent" tutorials stop at the 5-line loop:
 
 ```python
 while True:
@@ -18,169 +16,82 @@ while True:
     messages.append(results)
 ```
 
-That's 5 lines. Claude Code is 200,000 lines. **What are the other 199,995 lines doing?**
+Real-world agents like Claude Code have 200,000+ lines of code on top of this loop. **What are all those lines doing?**
 
-This repo answers that question with working code:
-
-- Why does the model need 8 behavioral instruction sections in the system prompt?
-- Why does `Read` track file mtimes and reject edits on stale files?
-- Why does the query loop need 3 different recovery paths for token limits?
-- Why are there 15 security checks on every shell command?
-- Why does prompt caching need cache_control breakpoints on both system blocks and messages?
-- Why does `grep exit 1` need special handling (it's not an error)?
-
-Every answer is in the code, with the same architecture as the real Claude Code.
-
-## Who This Is For
-
-- Developers who finished intro tutorials and want the **full picture**
-- Engineers building **production** agentic systems (not demos)
-- Anyone who wants to understand **why Claude Code works so well** -- not just what it does
-
-## What Makes This Different
-
-|  | Intro tutorials | **This repo** |
-|---|---|---|
-| Core loop | 20-line example | 9,630 lines of production code |
-| Tools | Simplified stubs | 18 tools matching Claude Code's schemas field-by-field |
-| System prompt | "You are a helpful assistant" | 8 static + 3 dynamic sections ported verbatim from Claude Code |
-| Security | None | 15 bash security checks (control chars, injection, unicode) |
-| Error handling | try/except | Retry with backoff, max_tokens recovery, auto-compact, tool result budget |
-| Permissions | None | 5 modes, wildcard rule matching, hook integration |
-| Testing | Maybe a few | 215 unit tests + 90 conformance tests against the original |
-| Usable? | Example code | **pip install and use as a real coding agent** |
+This repo answers that question -- with 9,600 lines of working Python that you can read, run, and modify. Every module maps to the original Claude Code architecture. Every design decision is explained.
 
 ## Quick Start
 
 ```bash
-# Install
 pip install -e ".[dev]"
-
-# Use it (non-interactive)
 export ANTHROPIC_API_KEY=your-key
+
+# Non-interactive
 claude-code-py -p "Read pyproject.toml and tell me the version"
 
-# Use it (interactive TUI)
+# Interactive TUI
 claude-code-py
 
 # Run tests
 pytest tests/ conformance/ -v
 ```
 
-## Architecture
+## Tutorial: Build It From Scratch
 
-```
-┌─────────────────────────────────────────────────┐
-│                CLI (cli.py)                      │
-├─────────────────────────────────────────────────┤
-│         Interactive TUI (tui/)                   │
-│   MessageList · Spinner · StatusBar · Prompts    │
-├─────────────────────────────────────────────────┤
-│        Query Engine (query/)                     │
-│   call_model → run_tools → repeat               │
-│   + auto-compact + max_tokens recovery           │
-│   + tool result budget + abort handling          │
-├─────────────────────────────────────────────────┤
-│          Tool System (tool/, tools/)             │
-│   18 tools · Pydantic schemas · parallel exec    │
-│   + streaming executor + security checks         │
-├─────────────────────────────────────────────────┤
-│        Permissions (permissions/)                │
-│   5 modes · rule matching · PreToolUse hooks     │
-├─────────────────────────────────────────────────┤
-│      Context Engine (context/, memory/)          │
-│   System prompt (11 sections) · CLAUDE.md        │
-│   Git context · Memory · Prompt caching          │
-├─────────────────────────────────────────────────┤
-│     Extensions (hooks/, skills/, plugins/)        │
-│   Hook system · 11 slash commands · Skills       │
-│   Plugin loader · MCP client · OAuth             │
-└─────────────────────────────────────────────────┘
-```
+A 7-chapter guide that builds this entire codebase step by step. Each chapter adds one layer, with working code you can run at every stage.
 
-## Reading Guide: From Loop to Production
+| | Chapter | What You Build |
+|---|---|---|
+| 1 | [Hello Agent](docs/tutorial/chapter-01-hello-agent.md) | A CLI that streams responses from Claude |
+| 2 | [Adding Tools](docs/tutorial/chapter-02-adding-tools.md) | The tool protocol -- teach your agent to read files and run commands |
+| 3 | [The Agentic Loop](docs/tutorial/chapter-03-agentic-loop.md) | Autonomous tool chaining, parallel execution, error recovery |
+| 4 | [A Real Terminal UI](docs/tutorial/chapter-04-terminal-ui.md) | Interactive REPL with streaming, spinners, and permission dialogs |
+| 5 | [Context Engineering](docs/tutorial/chapter-05-context-engineering.md) | System prompt assembly, CLAUDE.md, git context, persistent memory |
+| 6 | [Permissions and Safety](docs/tutorial/chapter-06-permissions-safety.md) | Security checks, sandboxing, permission modes, hooks |
+| 7 | [Extension Points](docs/tutorial/chapter-07-extension-points.md) | Skills, plugins, MCP client, slash commands |
 
-### Level 1: The Core Loop
-*"I want to understand how AI coding agents work."*
+## Reading the Code
 
-- [`query/loop.py`](src/claude_code/query/loop.py) -- The agentic while-loop
-- [`services/api/claude.py`](src/claude_code/services/api/claude.py) -- API streaming with SSE events
-- [`tool/base.py`](src/claude_code/tool/base.py) -- What every tool must implement
-- [`tool/executor.py`](src/claude_code/tool/executor.py) -- Parse → validate → hooks → call → format
+If you prefer to dive straight into the source:
 
-### Level 2: Making It Reliable
-*"My demo works. How do I make it production-quality?"*
+**Start here** -- the core loop that powers the entire agent:
+- [`query/loop.py`](src/claude_code/query/loop.py) -- Call model, run tools, repeat. Plus recovery paths for token limits, auto-compact, and abort handling.
 
-- [`query/loop.py` recovery paths](src/claude_code/query/loop.py) -- max_tokens recovery, auto-compact, tool result budget
-- [`services/api/errors.py`](src/claude_code/services/api/errors.py) -- Error classification, retry with backoff
-- [`services/api/claude.py` caching](src/claude_code/services/api/claude.py) -- Prompt caching (saves ~50% on API costs)
-- [`services/compact/compact.py`](src/claude_code/services/compact/compact.py) -- Auto-compaction when context gets too long
+**Then understand the tool system** -- how the agent interacts with the world:
+- [`tool/base.py`](src/claude_code/tool/base.py) -- The Tool protocol every tool implements
+- [`tool/executor.py`](src/claude_code/tool/executor.py) -- Execution pipeline: parse, validate, hooks, permissions, call
+- [`tools/bash_tool/`](src/claude_code/tools/bash_tool/) -- Shell execution with 15 security checks and sandboxing
+- [`tools/file_edit_tool/`](src/claude_code/tools/file_edit_tool/) -- Read-before-edit pattern with encoding detection
 
-### Level 3: Making It Safe
-*"How do I let an AI run shell commands without destroying everything?"*
+**Then understand context engineering** -- what makes the agent actually useful:
+- [`context/system_prompt.py`](src/claude_code/context/system_prompt.py) -- 11-section system prompt ported from Claude Code
+- [`context/user_context.py`](src/claude_code/context/user_context.py) -- CLAUDE.md file loading
+- [`memory/`](src/claude_code/memory/) -- Persistent memory across sessions
 
-- [`tools/bash_tool/security.py`](src/claude_code/tools/bash_tool/security.py) -- 15 security checks on every command
-- [`tools/bash_tool/sandbox.py`](src/claude_code/tools/bash_tool/sandbox.py) -- macOS/Linux command sandboxing
-- [`permissions/check.py`](src/claude_code/permissions/check.py) -- Rule matching, permission modes
-- [`tools/file_edit_tool/`](src/claude_code/tools/file_edit_tool/) -- Read-before-edit, stale file detection, encoding preservation
-
-### Level 4: Making It Smart
-*"How does the model know about my project?"*
-
-- [`context/system_prompt.py`](src/claude_code/context/system_prompt.py) -- 11-section system prompt assembly
-- [`context/user_context.py`](src/claude_code/context/user_context.py) -- CLAUDE.md file hierarchy
-- [`context/git_context.py`](src/claude_code/context/git_context.py) -- Git status/branch injection
-- [`memory/`](src/claude_code/memory/) -- Persistent cross-session memory
-
-### Level 5: Making It Extensible
-*"How do I let users customize the agent?"*
-
-- [`hooks/`](src/claude_code/hooks/) -- PreToolUse/PostToolUse shell hooks
+**Then understand safety and extensibility:**
+- [`permissions/check.py`](src/claude_code/permissions/check.py) -- 5 permission modes with wildcard rule matching
+- [`hooks/`](src/claude_code/hooks/) -- PreToolUse/PostToolUse hooks
 - [`skills/`](src/claude_code/skills/) -- Markdown skill files with YAML frontmatter
-- [`plugins/`](src/claude_code/plugins/) -- Git-based plugin loading
-- [`commands/registry.py`](src/claude_code/commands/registry.py) -- Slash command system
 - [`services/mcp/`](src/claude_code/services/mcp/) -- Model Context Protocol client
 
-## The Deep Dive Tutorial
+## What's Inside
 
-A 7-chapter guide that builds this entire codebase from scratch:
+**18 tools** matching Claude Code's tool names and input schemas: Bash, Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Agent, TaskCreate, TaskGet, TaskUpdate, TaskList, EnterPlanMode, ExitPlanMode, AskUserQuestion, NotebookEdit, Skill.
 
-1. **[Hello Agent](docs/tutorial/chapter-01-hello-agent.md)** -- CLI + streaming API
-2. **[Adding Tools](docs/tutorial/chapter-02-adding-tools.md)** -- Tool protocol + Read/Bash
-3. **The Agentic Loop** -- Autonomous tool chaining *(coming soon)*
-4. **Terminal UI** -- Textual REPL with streaming *(coming soon)*
-5. **Context Engineering** -- System prompt + CLAUDE.md + memory *(coming soon)*
-6. **Permissions and Safety** -- Security checks + sandbox *(coming soon)*
-7. **Extension Points** -- Hooks + skills + plugins *(coming soon)*
+**Full interactive TUI** built with [Textual](https://textual.textualize.io/) -- message list, streaming markdown, spinner, status bar, permission dialogs, slash commands.
 
-## Stats
+**Production reliability** -- API retry with backoff, prompt caching, auto-compact, max_output_tokens recovery, tool result budget, streaming tool execution.
 
-| Metric | Value |
-|---|---|
-| Source files | 73 |
-| Lines of Python | 9,630 |
-| Tools | 18 (matching Claude Code's tool names and schemas) |
-| Unit tests | 215 |
-| Conformance tests | 90 (verifying behavior against original) |
-| Slash commands | 11 |
-| Security checks | 15 |
+**Security** -- 15 bash security checks (control chars, injection, unicode), macOS/Linux sandboxing, file encoding preservation, read-before-edit enforcement.
 
-## Tech Stack
-
-| Purpose | Library | Replaces (in Claude Code) |
-|---|---|---|
-| CLI | [Click](https://click.palletsprojects.com/) | Commander.js |
-| Terminal UI | [Textual](https://textual.textualize.io/) | Ink (React for terminal) |
-| Schemas | [Pydantic](https://docs.pydantic.dev/) | Zod |
-| API | [anthropic](https://github.com/anthropics/anthropic-sdk-python) | @anthropic-ai/sdk |
-| Async | asyncio | Node.js event loop |
+**305 tests** -- 215 unit tests + 90 conformance tests verifying behavioral parity with the original TypeScript Claude Code.
 
 ## Contributing
 
-Contributions that improve fidelity to the original Claude Code behavior are especially welcome. Run the conformance tests to verify:
+Contributions that improve fidelity to the original Claude Code behavior are especially welcome. The conformance test suite verifies behavioral parity:
 
 ```bash
-pytest conformance/ -v  # 90 tests verifying behavioral parity
+pytest conformance/ -v
 ```
 
 ## License
