@@ -361,15 +361,9 @@ async def _execute_stream(
                     pass
 
 
-    except Exception as e:
-        logger.error("API call failed: %s", e)
-        # Yield error as a system message
-        yield {
-            "type": "api_error",
-            "error": str(e),
-            "error_type": type(e).__name__,
-        }
-        return
+    except Exception:
+        # Re-raise so query_model's retry loop can handle it
+        raise
 
     # Yield the completed assistant message
     if content_blocks:

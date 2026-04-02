@@ -285,6 +285,11 @@ class REPLScreen(Screen):
                         # Tools done, next API call coming
                         spinner.show("Thinking...")
 
+                    elif event_type == "api_retry":
+                        attempt = event.get("attempt", 1)
+                        delay = event.get("delay", 1)
+                        spinner.show(f"Retrying (attempt {attempt}, waiting {delay:.0f}s)...")
+
                     elif event_type == "api_error":
                         messages.add_system_message(
                             f"API Error: {event.get('error', 'Unknown')}",
