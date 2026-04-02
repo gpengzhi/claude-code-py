@@ -114,7 +114,7 @@ def has_permissions_to_use_tool(
 
     if mode == "acceptEdits":
         # Auto-accept file edits and reads, ask for everything else
-        if tool_name in ("Read", "Edit", "Write", "Glob", "Grep", "NotebookEdit"):
+        if tool_name in ("Read", "Edit", "Write", "Glob", "Grep"):
             return PermissionAllowDecision(updated_input=tool_input)
         return PermissionAskDecision(
             message=f"Allow {tool_name}?",

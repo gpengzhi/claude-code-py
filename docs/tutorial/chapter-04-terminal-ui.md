@@ -484,7 +484,6 @@ The production version of this chapter lives in:
 - [`src/claude_code/tui/widgets/message_list.py`](../../src/claude_code/tui/widgets/message_list.py) -- Conversation display with streaming
 - [`src/claude_code/tui/widgets/spinner.py`](../../src/claude_code/tui/widgets/spinner.py) -- Animated spinner with elapsed time
 - [`src/claude_code/tui/widgets/status_bar.py`](../../src/claude_code/tui/widgets/status_bar.py) -- Reactive status bar
-- [`src/claude_code/tui/widgets/permission_dialog.py`](../../src/claude_code/tui/widgets/permission_dialog.py) -- Tool approval dialog
 - [`src/claude_code/tui/widgets/prompt_input.py`](../../src/claude_code/tui/widgets/prompt_input.py) -- Input with history
 
 ---

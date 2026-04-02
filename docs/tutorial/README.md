@@ -82,7 +82,7 @@ Result: The agent knows your project, remembers past conversations, and follows 
 
 You'll learn:
 - The read-before-edit pattern (why it prevents hallucination-based edits)
-- Permission modes: ask, allow, deny
+- Permission modes: default, acceptEdits, bypassPermissions, dontAsk, plan
 - Hook system: run shell commands before/after tool execution
 - Why tools return errors instead of throwing exceptions
 - Cost tracking and budget limits
