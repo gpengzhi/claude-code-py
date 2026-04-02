@@ -137,6 +137,7 @@ class GrepTool(Tool):
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                cwd=str(context.cwd),
             )
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
                 proc.communicate(),
@@ -207,13 +208,19 @@ class GrepTool(Tool):
             return ToolResult(data=f"Invalid regex: {e}", is_error=True)
 
         matches: list[str] = []
-        glob_pattern = args.glob or "**/*"
 
         try:
-            for file_path in search_path.glob(glob_pattern):
+            # If search_path is a file, search it directly
+            if search_path.is_file():
+                files_to_search = [search_path]
+            else:
+                glob_pattern = args.glob or "**/*"
+                files_to_search = search_path.glob(glob_pattern)
+
+            for file_path in files_to_search:
                 if not file_path.is_file():
                     continue
-                if any(part.startswith(".") for part in file_path.parts):
+                if any(part.startswith(".") for part in file_path.relative_to(context.cwd).parts):
                     continue
                 try:
                     content = file_path.read_text(encoding="utf-8", errors="ignore")

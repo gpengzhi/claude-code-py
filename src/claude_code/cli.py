@@ -268,6 +268,11 @@ async def _run_print_mode(
     if git_context:
         effective_prompt = f"<system-context>\n{git_context}\n</system-context>\n\n{prompt}"
 
+    # Session persistence for --resume support
+    from claude_code.utils.session_storage import generate_session_id, save_message
+    session_id = resume_session or generate_session_id()
+    save_message(session_id, {"role": "user", "content": effective_prompt})
+
     streamed_text = False
     try:
         async for event in engine.submit_message(effective_prompt, max_turns=max_turns):
@@ -281,6 +286,7 @@ async def _run_print_mode(
                     click.echo(f"\nError: {event.get('error', 'Unknown error')}", err=True)
                     sys.exit(1)
             elif isinstance(event, AssistantMessage):
+                save_message(session_id, event.model_dump(exclude_none=True))
                 # Only print text blocks if we didn't already stream them
                 if not streamed_text:
                     for block in event.content:
@@ -292,13 +298,14 @@ async def _run_print_mode(
         sys.stdout.write("\n")
         sys.stdout.flush()
 
-        # Print cost summary to stderr
+        # Print cost and session info to stderr
         if engine.total_usage.cost_usd > 0:
             click.echo(
                 f"\n[cost: ${engine.total_usage.cost_usd:.4f} | "
                 f"in: {engine.total_usage.input_tokens} | "
                 f"out: {engine.total_usage.output_tokens} | "
-                f"turns: {engine.turn_count}]",
+                f"turns: {engine.turn_count} | "
+                f"session: {session_id}]",
                 err=True,
             )
 
