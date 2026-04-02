@@ -58,7 +58,9 @@ def calculate_cost(model: str, usage: Usage) -> float:
     """Calculate USD cost from token usage."""
     costs = DEFAULT_COSTS
     for model_prefix, model_costs in MODEL_COSTS.items():
-        if model.startswith(model_prefix.rsplit("-", 1)[0]):
+        # Match by prefix or substring (for proxy model names like ppio/pa/claude-sonnet-4-6)
+        key = model_prefix.rsplit("-", 1)[0]  # e.g., "claude-sonnet-4"
+        if key in model:
             costs = model_costs
             break
 
