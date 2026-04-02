@@ -43,10 +43,40 @@ class PromptInput(Widget):
         )
 
     def on_key(self, event: object) -> None:
-        """Handle Ctrl+D to quit."""
+        """Handle Ctrl+D to quit, Up/Down for history."""
         key = getattr(event, "key", "")
         if key == "ctrl+d":
             self.app.exit()
+        elif key == "up" and self.history:
+            if self.history_index == -1:
+                # Save current input before navigating history
+                try:
+                    self._saved_input = self.query_one("#prompt-text-input", Input).value
+                except Exception:
+                    self._saved_input = ""
+                self.history_index = len(self.history) - 1
+            elif self.history_index > 0:
+                self.history_index -= 1
+            try:
+                self.query_one("#prompt-text-input", Input).value = self.history[self.history_index]
+            except Exception:
+                pass
+        elif key == "down":
+            if self.history_index == -1:
+                return
+            elif self.history_index < len(self.history) - 1:
+                self.history_index += 1
+                try:
+                    self.query_one("#prompt-text-input", Input).value = self.history[self.history_index]
+                except Exception:
+                    pass
+            else:
+                # Back to current input
+                self.history_index = -1
+                try:
+                    self.query_one("#prompt-text-input", Input).value = getattr(self, "_saved_input", "")
+                except Exception:
+                    pass
 
     @on(Input.Submitted, "#prompt-text-input")
     def on_input_submitted(self, event: Input.Submitted) -> None:
