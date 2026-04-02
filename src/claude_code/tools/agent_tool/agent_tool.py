@@ -73,13 +73,22 @@ class AgentTool(Tool):
                 cwd=context.cwd,
             )
 
-            # Collect all text output from the sub-agent
+            # Collect output and report progress
+            progress = context.progress_callback
+            if progress:
+                progress(f"Sub-agent: thinking...")
+
             result_parts: list[str] = []
             async for event in engine.submit_message(args.prompt):
                 if isinstance(event, dict):
                     event_type = event.get("type")
                     if event_type == "stream_event" and event.get("event_type") == "text_delta":
                         result_parts.append(event.get("text", ""))
+                elif hasattr(event, "content"):
+                    # AssistantMessage — check for tool use
+                    for block in event.content:
+                        if hasattr(block, "name") and progress:
+                            progress(f"Sub-agent: running {block.name}...")
 
             return ToolResult(data="".join(result_parts) or "(sub-agent produced no output)")
 

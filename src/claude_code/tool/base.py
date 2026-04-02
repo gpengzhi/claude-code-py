@@ -50,6 +50,8 @@ class ToolUseContext:
     permission_callback: PermissionCallback | None = None
     # Async callback for AskUserQuestion: receives (formatted_question) -> user_response_str
     user_question_callback: Any | None = None
+    # Progress callback: tools can report status (e.g., "Sub-agent: reading file...")
+    progress_callback: Callable[[str], None] | None = None
     # Shared mutable app state -- direct reference, no React-style updater
     _app_state: Any = field(default=None)
 

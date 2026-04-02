@@ -80,11 +80,19 @@ class SkillTool(Tool):
                 cwd=context.cwd,
             )
 
+            progress = context.progress_callback
+            if progress:
+                progress(f"Skill '{args.skill}': thinking...")
+
             result_parts: list[str] = []
             async for event in engine.submit_message(user_prompt):
                 if isinstance(event, dict):
                     if event.get("type") == "stream_event" and event.get("event_type") == "text_delta":
                         result_parts.append(event.get("text", ""))
+                elif hasattr(event, "content"):
+                    for block in event.content:
+                        if hasattr(block, "name") and progress:
+                            progress(f"Skill '{args.skill}': running {block.name}...")
 
             return ToolResult(data="".join(result_parts) or f"(skill '{args.skill}' produced no output)")
 

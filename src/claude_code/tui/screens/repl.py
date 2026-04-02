@@ -71,8 +71,9 @@ class REPLScreen(Screen):
             thinking=thinking,
             permission_mode=permission_mode,
         )
-        # Wire user question callback for AskUserQuestion tool
+        # Wire callbacks for interactive tools
         self._engine.tool_use_context.user_question_callback = self._ask_user_question
+        self._engine.tool_use_context.progress_callback = self._on_tool_progress
         self._is_querying = False
         self._streaming_text = ""
         self._current_task: asyncio.Task | None = None
@@ -90,6 +91,14 @@ class REPLScreen(Screen):
         yield Spinner(id="spinner-area")            # Above input when visible
         yield PromptInput(id="input-area")          # Pinned above status bar
         yield StatusBar(id="status-bar")            # Very bottom
+
+    def _on_tool_progress(self, message: str) -> None:
+        """Update spinner with tool progress."""
+        try:
+            spinner = self.query_one("#spinner-area", Spinner)
+            spinner.update_text(message)
+        except NoMatches:
+            pass
 
     def on_mount(self) -> None:
         try:
