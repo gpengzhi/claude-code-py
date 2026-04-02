@@ -36,6 +36,7 @@ dependencies = [
     "aiohttp>=3.9.0",
     "aiofiles>=24.0.0",
     "wcmatch>=8.5",
+    "ddgs>=9.0",
 ]
 
 [project.optional-dependencies]

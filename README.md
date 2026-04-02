@@ -40,7 +40,7 @@ claude-code-py
 
 | Layer | What It Does | Key Files |
 |---|---|---|
-| **16 Tools** | Bash (15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, Agent, Task management, Plan mode, Skills | `tools/` |
+| **17 Tools** | Bash (15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Agent, Task management, Plan mode, Skills | `tools/` |
 | **Agentic Loop** | Stream response, execute tools, recover from errors, auto-compact | `query/loop.py` |
 | **Streaming API** | Prompt caching, extended thinking, cost tracking, retry with backoff | `services/api/claude.py` |
 | **Context Engineering** | system prompt (up to 13 sections), CLAUDE.md, git context, persistent memory | `context/` |
