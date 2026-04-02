@@ -298,16 +298,8 @@ async def _run_print_mode(
         sys.stdout.write("\n")
         sys.stdout.flush()
 
-        # Print cost and session info to stderr
-        if engine.total_usage.cost_usd > 0:
-            click.echo(
-                f"\n[cost: ${engine.total_usage.cost_usd:.4f} | "
-                f"in: {engine.total_usage.input_tokens} | "
-                f"out: {engine.total_usage.output_tokens} | "
-                f"turns: {engine.turn_count} | "
-                f"session: {session_id}]",
-                err=True,
-            )
+        # Print session info to stderr
+        click.echo(f"\n[session: {session_id}]", err=True)
 
     except KeyboardInterrupt:
         click.echo("\nInterrupted.", err=True)

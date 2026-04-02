@@ -151,22 +151,3 @@ async def with_retry(
     raise last_error or APIError("Max retries exceeded")
 
 
-# Cost warning thresholds
-COST_WARNING_THRESHOLD = 5.0   # $5 warning
-COST_LIMIT_THRESHOLD = 25.0   # $25 hard limit (configurable)
-
-
-def check_cost_threshold(
-    cost_usd: float,
-    warning_threshold: float = COST_WARNING_THRESHOLD,
-    limit_threshold: float = COST_LIMIT_THRESHOLD,
-) -> str | None:
-    """Check if cost has exceeded thresholds.
-
-    Returns a warning/error message, or None.
-    """
-    if cost_usd >= limit_threshold:
-        return f"Cost limit exceeded: ${cost_usd:.2f} >= ${limit_threshold:.2f}. Stopping."
-    if cost_usd >= warning_threshold:
-        return f"Warning: Cost is ${cost_usd:.2f} (threshold: ${warning_threshold:.2f})"
-    return None

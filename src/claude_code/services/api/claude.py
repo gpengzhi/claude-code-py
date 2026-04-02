@@ -24,53 +24,6 @@ from claude_code.types.message import (
 logger = logging.getLogger(__name__)
 
 # Cost per token for common models (USD)
-MODEL_COSTS: dict[str, dict[str, float]] = {
-    "claude-sonnet-4-20250514": {
-        "input": 3.0 / 1_000_000,
-        "output": 15.0 / 1_000_000,
-        "cache_read": 0.3 / 1_000_000,
-        "cache_write": 3.75 / 1_000_000,
-    },
-    "claude-opus-4-20250514": {
-        "input": 15.0 / 1_000_000,
-        "output": 75.0 / 1_000_000,
-        "cache_read": 1.5 / 1_000_000,
-        "cache_write": 18.75 / 1_000_000,
-    },
-    "claude-haiku-4-5-20251001": {
-        "input": 0.80 / 1_000_000,
-        "output": 4.0 / 1_000_000,
-        "cache_read": 0.08 / 1_000_000,
-        "cache_write": 1.0 / 1_000_000,
-    },
-}
-
-# Fallback cost
-DEFAULT_COSTS = {
-    "input": 3.0 / 1_000_000,
-    "output": 15.0 / 1_000_000,
-    "cache_read": 0.3 / 1_000_000,
-    "cache_write": 3.75 / 1_000_000,
-}
-
-
-def calculate_cost(model: str, usage: Usage) -> float:
-    """Calculate USD cost from token usage."""
-    costs = DEFAULT_COSTS
-    for model_prefix, model_costs in MODEL_COSTS.items():
-        # Match by prefix or substring (for proxy model names like ppio/pa/claude-sonnet-4-6)
-        key = model_prefix.rsplit("-", 1)[0]  # e.g., "claude-sonnet-4"
-        if key in model:
-            costs = model_costs
-            break
-
-    return (
-        usage.input_tokens * costs["input"]
-        + usage.output_tokens * costs["output"]
-        + usage.cache_read_input_tokens * costs["cache_read"]
-        + usage.cache_creation_input_tokens * costs["cache_write"]
-    )
-
 
 CACHE_CONTROL_EPHEMERAL = {"type": "ephemeral"}
 
@@ -407,7 +360,6 @@ async def _execute_stream(
                 elif event_type == "message_stop":
                     pass
 
-            cost = calculate_cost(model, usage)
 
     except Exception as e:
         logger.error("API call failed: %s", e)
@@ -425,7 +377,7 @@ async def _execute_stream(
             content=content_blocks,
             model=model,
             stop_reason=stop_reason,
-            cost_usd=cost,
+            cost_usd=0.0,
             uuid=make_uuid(),
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,

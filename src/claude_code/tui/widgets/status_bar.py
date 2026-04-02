@@ -1,4 +1,4 @@
-"""Status bar widget -- bottom bar showing model and cost.
+"""Status bar widget -- bottom bar showing model name.
 
 """
 
@@ -24,16 +24,12 @@ class StatusBar(Widget):
     """
 
     model: reactive[str] = reactive("claude-sonnet-4-20250514")
-    cost_usd: reactive[float] = reactive(0.0)
     mode: reactive[str] = reactive("code")
 
     def compose(self):
         yield Static("", id="status-content")
 
     def watch_model(self) -> None:
-        self._update_display()
-
-    def watch_cost_usd(self) -> None:
         self._update_display()
 
     def watch_mode(self) -> None:
@@ -53,12 +49,6 @@ class StatusBar(Widget):
                 model_short = model_short[:27] + "..."
             text.append(f" {model_short}", style="bold")
 
-            # Separator
-            text.append("  |  ", style="dim")
-
-            # Cost
-            text.append(f"${self.cost_usd:.4f}", style="green" if self.cost_usd < 1.0 else "yellow")
-
             # Mode
             if self.mode != "code":
                 text.append("  |  ", style="dim")
@@ -71,13 +61,10 @@ class StatusBar(Widget):
     def update_stats(
         self,
         model: str | None = None,
-        cost_usd: float | None = None,
         mode: str | None = None,
     ) -> None:
         """Update status bar values."""
         if model is not None:
             self.model = model
-        if cost_usd is not None:
-            self.cost_usd = cost_usd
         if mode is not None:
             self.mode = mode

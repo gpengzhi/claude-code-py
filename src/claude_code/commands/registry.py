@@ -83,14 +83,13 @@ async def cmd_clear(**kwargs: Any) -> CommandResult:
 
 
 async def cmd_cost(**kwargs: Any) -> CommandResult:
-    """Show cost and usage."""
+    """Show usage stats."""
     engine = kwargs.get("engine")
     if engine:
         usage = engine.total_usage
         total_tokens = usage.input_tokens + usage.output_tokens
         return CommandResult(
             message=(
-                f"Total cost: ${usage.cost_usd:.4f}\n"
                 f"Input tokens: {usage.input_tokens:,}\n"
                 f"Output tokens: {usage.output_tokens:,}\n"
                 f"Cache read: {usage.cache_read_input_tokens:,}\n"

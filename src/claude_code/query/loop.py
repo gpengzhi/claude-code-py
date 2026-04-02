@@ -67,7 +67,6 @@ async def query_loop(
     abort_event: asyncio.Event | None = None,
     max_turns: int = 100,
     hooks_config: dict | None = None,
-    cumulative_cost_usd: float = 0.0,
     thinking: bool = False,
 ) -> AsyncGenerator[AssistantMessage | dict[str, Any], None]:
     """Core agentic loop.
@@ -76,18 +75,15 @@ async def query_loop(
     - The model stops (no tool_use blocks)
     - max_turns is reached
     - abort_event is set
-    - Cost limit exceeded ($25)
 
     Recovery paths:
     - Auto-compact when context is too long
     - max_output_tokens recovery (up to 3 retries with resume message)
     - Tool result budget truncation for older messages
     """
-    from claude_code.services.api.errors import check_cost_threshold
     from claude_code.services.compact.compact import AutoCompactTracker
 
     turn_count = 0
-    session_cost = cumulative_cost_usd
     # Operate directly on the caller's message list so QueryEngine stays in sync
     working_messages = messages
     active_tools = tools or []
@@ -154,14 +150,6 @@ async def query_loop(
 
         if assistant_message is None:
             return
-
-        # --- Cost threshold check ---
-        session_cost += assistant_message.cost_usd
-        cost_warning = check_cost_threshold(session_cost)
-        if cost_warning:
-            yield {"type": "system_event", "event": "cost_warning", "message": cost_warning}
-            if "limit" in cost_warning.lower():
-                return  # Hard stop at cost limit
 
         # --- Recovery: max_output_tokens ---
         if (

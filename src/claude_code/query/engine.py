@@ -115,7 +115,6 @@ class QueryEngine:
             abort_event=self.abort_event,
             max_turns=max_turns,
             hooks_config=self.hooks_config,
-            cumulative_cost_usd=self.total_usage.cost_usd,
             thinking=self.thinking,
         ):
             if isinstance(event, AssistantMessage):
@@ -124,7 +123,6 @@ class QueryEngine:
                 self.total_usage.output_tokens += event.output_tokens
                 self.total_usage.cache_read_input_tokens += event.cache_read_input_tokens
                 self.total_usage.cache_creation_input_tokens += event.cache_creation_input_tokens
-                self.total_usage.cost_usd += event.cost_usd
                 self.turn_count += 1
 
             yield event
