@@ -1,6 +1,6 @@
 # Build Claude Code From Scratch in Python
 
-> We studied the architecture of Claude Code and rebuilt it in ~8,500 lines of clean Python -- designed to teach how production AI coding agents work, and usable as a real tool.
+> We studied the architecture of Claude Code and rebuilt it in ~8,600 lines of clean Python -- designed to teach how production AI coding agents work, and usable as a real tool.
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
@@ -19,7 +19,7 @@ while True:
 
 Real-world agents like [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) have 500,000+ lines on top of this loop. **What are all those lines doing?**
 
-This project answers that question -- with ~8,800 lines of working Python that you can read, run, and modify. Every module maps to the original Claude Code architecture. Every design decision is explained in the [7-chapter tutorial](docs/tutorial/).
+This project answers that question -- with ~8,600 lines of working Python that you can read, run, and modify. Every module maps to the original Claude Code architecture. Every design decision is explained in the [7-chapter tutorial](docs/tutorial/).
 
 ## Quick Start
 
@@ -40,7 +40,7 @@ claude-code-py
 
 | Layer | What It Does | Key Files |
 |---|---|---|
-| **17 Tools** | Bash (15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Agent, Task management, Plan mode, Skills | `tools/` |
+| **17 Tools** | Bash (15 security checks + sandbox), Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Agent, Task management, Plan mode, AskUserQuestion, Skill | `tools/` |
 | **Agentic Loop** | Stream response, execute tools, recover from errors, auto-compact | `query/loop.py` |
 | **Streaming API** | Prompt caching, extended thinking, cost tracking, retry with backoff | `services/api/claude.py` |
 | **Context Engineering** | system prompt (up to 13 sections), CLAUDE.md, git context, persistent memory | `context/` |

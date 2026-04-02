@@ -129,7 +129,7 @@ class Tool(ABC):
         return ""
 ```
 
-**Why a Protocol/ABC?** Because we'll have 16 tools eventually. A consistent interface means the executor doesn't need to know which specific tool it's running.
+**Why a Protocol/ABC?** Because we'll have 17 tools eventually. A consistent interface means the executor doesn't need to know which specific tool it's running.
 
 ## Step 3: Implementing Read
 

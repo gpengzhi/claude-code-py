@@ -207,7 +207,7 @@ What's in the system prompt matters more than the model you choose. The system p
 1. Identity       → "You are Claude Code, a coding agent..."
 2. Tool docs      → Description + usage instructions for each tool
 3. Environment    → Working directory, platform, shell
-4. Date           → "Today's date is 2026-03-31"
+4. Date           → "Today's date is YYYY-MM-DD"
 5. CLAUDE.md      → User's custom instructions (loaded from file hierarchy)
 6. Memory         → Persistent facts from previous sessions
 ```

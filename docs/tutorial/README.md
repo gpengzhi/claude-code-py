@@ -97,6 +97,7 @@ Result: The agent asks before running dangerous commands and respects your rules
 You'll learn:
 - Slash commands: a simple command registry pattern
 - Skills: markdown files that become agent capabilities
+- MCP client: connecting to external tool servers via stdio
 - Auto-compact: how to extend effective context beyond the window limit
 
 Result: A fully extensible agent that others can customize.
