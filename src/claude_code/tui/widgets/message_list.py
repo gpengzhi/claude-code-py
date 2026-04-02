@@ -22,15 +22,22 @@ class MessageList(VerticalScroll):
         self._streaming_widget: Static | None = None
 
     def compose(self) -> ComposeResult:
-        welcome = Text()
-        welcome.append("claude-code-py", style="bold #cba6f7")
-        welcome.append(" v0.1.0\n", style="dim")
-        welcome.append("Type your message below. ", style="#6c7086")
-        welcome.append("Ctrl+C", style="bold #6c7086")
-        welcome.append(" to interrupt, ", style="#6c7086")
-        welcome.append("Ctrl+D", style="bold #6c7086")
-        welcome.append(" to quit.", style="#6c7086")
-        yield Static(welcome, classes="message-row")
+        header = Text()
+        header.append("╭─────────────────────────────────────────────╮\n", style="#585b70")
+        header.append("│  ", style="#585b70")
+        header.append("◆ claude-code-py", style="bold #cba6f7")
+        header.append(" v0.1.0", style="#6c7086")
+        header.append("                    │\n", style="#585b70")
+        header.append("│  ", style="#585b70")
+        header.append("/help", style="bold #a6e3a1")
+        header.append(" for help  ", style="#6c7086")
+        header.append("Ctrl+C", style="bold #a6e3a1")
+        header.append(" interrupt  ", style="#6c7086")
+        header.append("Ctrl+D", style="bold #a6e3a1")
+        header.append(" quit", style="#6c7086")
+        header.append("  │\n", style="#585b70")
+        header.append("╰─────────────────────────────────────────────╯", style="#585b70")
+        yield Static(header, classes="message-row")
 
     def add_user_message(self, text: str) -> None:
         content = Text()
