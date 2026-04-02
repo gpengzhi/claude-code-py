@@ -1,4 +1,4 @@
-"""Status bar widget -- bottom bar showing model, cost, tokens.
+"""Status bar widget -- bottom bar showing model and cost.
 
 """
 
@@ -25,7 +25,6 @@ class StatusBar(Widget):
 
     model: reactive[str] = reactive("claude-sonnet-4-20250514")
     cost_usd: reactive[float] = reactive(0.0)
-    turn_count: reactive[int] = reactive(0)
     mode: reactive[str] = reactive("code")
 
     def compose(self):
@@ -35,9 +34,6 @@ class StatusBar(Widget):
         self._update_display()
 
     def watch_cost_usd(self) -> None:
-        self._update_display()
-
-    def watch_turn_count(self) -> None:
         self._update_display()
 
     def watch_mode(self) -> None:
@@ -63,12 +59,6 @@ class StatusBar(Widget):
             # Cost
             text.append(f"${self.cost_usd:.4f}", style="green" if self.cost_usd < 1.0 else "yellow")
 
-            # Separator
-            text.append("  |  ", style="dim")
-
-            # Turn count
-            text.append(f"{self.turn_count} turns", style="dim")
-
             # Mode
             if self.mode != "code":
                 text.append("  |  ", style="dim")
@@ -82,7 +72,6 @@ class StatusBar(Widget):
         self,
         model: str | None = None,
         cost_usd: float | None = None,
-        turn_count: int | None = None,
         mode: str | None = None,
     ) -> None:
         """Update status bar values."""
@@ -90,7 +79,5 @@ class StatusBar(Widget):
             self.model = model
         if cost_usd is not None:
             self.cost_usd = cost_usd
-        if turn_count is not None:
-            self.turn_count = turn_count
         if mode is not None:
             self.mode = mode

@@ -308,7 +308,6 @@ class REPLScreen(Screen):
                 status = self.query_one("#status-bar", StatusBar)
                 status.update_stats(
                     cost_usd=self._engine.total_usage.cost_usd,
-                    turn_count=self._engine.turn_count,
                 )
             except NoMatches:
                 pass
