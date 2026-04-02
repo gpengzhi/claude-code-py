@@ -65,12 +65,17 @@ class AgentTool(Tool):
 
             model = args.model or context.model or "claude-sonnet-4-20250514"
 
-            # Create an isolated sub-agent with its own message history
+            # Create an isolated sub-agent, inheriting parent's model and permissions
+            parent_perm_mode = "bypassPermissions"
+            if context._app_state is not None:
+                parent_perm_mode = context.get_app_state().tool_permission_context.mode
+
             engine = QueryEngine(
                 model=model,
                 system_prompt=f"You are a sub-agent. Task: {args.description}",
                 tools=context.tools,
                 cwd=context.cwd,
+                permission_mode=parent_perm_mode,
             )
 
             # Collect output and report progress
@@ -78,14 +83,18 @@ class AgentTool(Tool):
             if progress:
                 progress(f"Sub-agent: thinking...")
 
+            turn = 0
             result_parts: list[str] = []
-            async for event in engine.submit_message(args.prompt):
+            async for event in engine.submit_message(args.prompt, max_turns=10):
                 if isinstance(event, dict):
                     event_type = event.get("type")
                     if event_type == "stream_event" and event.get("event_type") == "text_delta":
                         result_parts.append(event.get("text", ""))
+                    elif event_type == "tool_results":
+                        turn += 1
+                        if progress:
+                            progress(f"Sub-agent: turn {turn}, thinking...")
                 elif hasattr(event, "content"):
-                    # AssistantMessage — check for tool use
                     for block in event.content:
                         if hasattr(block, "name") and progress:
                             progress(f"Sub-agent: running {block.name}...")

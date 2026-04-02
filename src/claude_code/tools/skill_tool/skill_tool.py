@@ -73,11 +73,16 @@ class SkillTool(Tool):
         try:
             from claude_code.query.engine import QueryEngine
 
+            parent_perm_mode = "bypassPermissions"
+            if context._app_state is not None:
+                parent_perm_mode = context.get_app_state().tool_permission_context.mode
+
             engine = QueryEngine(
                 model=skill.get("model") or context.model or "claude-sonnet-4-20250514",
                 system_prompt=f"You are executing the skill '{args.skill}'.\n\n{skill_body}",
                 tools=skill_tools,
                 cwd=context.cwd,
+                permission_mode=parent_perm_mode,
             )
 
             progress = context.progress_callback
@@ -85,7 +90,7 @@ class SkillTool(Tool):
                 progress(f"Skill '{args.skill}': thinking...")
 
             result_parts: list[str] = []
-            async for event in engine.submit_message(user_prompt):
+            async for event in engine.submit_message(user_prompt, max_turns=10):
                 if isinstance(event, dict):
                     if event.get("type") == "stream_event" and event.get("event_type") == "text_delta":
                         result_parts.append(event.get("text", ""))
