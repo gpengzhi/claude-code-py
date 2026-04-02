@@ -29,7 +29,10 @@ def get_intro_section() -> str:
         "Use the instructions below and the tools available to you to assist the user.\n\n"
         "IMPORTANT: Assist with authorized security testing, defensive security, CTF challenges, "
         "and educational contexts. Refuse requests for destructive techniques, DoS attacks, "
-        "mass targeting, supply chain compromise, or detection evasion for malicious purposes.\n"
+        "mass targeting, supply chain compromise, or detection evasion for malicious purposes. "
+        "Dual-use security tools (C2 frameworks, credential testing, exploit development) require "
+        "clear authorization context: pentesting engagements, CTF competitions, security research, "
+        "or defensive use cases.\n"
         "IMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident "
         "that the URLs are for helping the user with programming. You may use URLs provided by "
         "the user in their messages or local files."
@@ -154,9 +157,14 @@ def get_environment_info(cwd: Path, model: str = "") -> str:
     Matches TS computeSimpleEnvInfo which includes model identity,
     knowledge cutoff, git repo detection, and product info.
     """
+    # Git repo detection
+    is_git_repo = (cwd / ".git").exists()
+
     parts = [
         "# Environment",
+        "You have been invoked in the following environment:",
         f" - Primary working directory: {cwd}",
+        f"  - Is a git repository: {'true' if is_git_repo else 'false'}",
         f" - Platform: {platform.system().lower()}",
         f" - Shell: {os.environ.get('SHELL', '/bin/bash')}",
         f" - OS Version: {platform.platform()}",
@@ -168,11 +176,12 @@ def get_environment_info(cwd: Path, model: str = "") -> str:
         parts.append(f" - You are powered by: {model_display}")
 
     # Knowledge cutoff
-    parts.append(" - Assistant knowledge cutoff is early 2025.")
+    parts.append(" - Assistant knowledge cutoff is May 2025.")
 
     # Claude Code product info
     parts.append(
-        " - Claude Code is available as a CLI, desktop app, and IDE extensions."
+        " - Claude Code is available as a CLI in the terminal, desktop app "
+        "(Mac/Windows), web app (claude.ai/code), and IDE extensions (VS Code, JetBrains)."
     )
 
     return "\n".join(parts)
@@ -220,23 +229,6 @@ def get_session_guidance_section(tools: list[Tool]) -> str:
 def get_date_info() -> str:
     now = datetime.datetime.now()
     return f"Today's date is {now.strftime('%Y-%m-%d')}."
-
-
-def build_tool_descriptions(tools: list[Tool]) -> str:
-    if not tools:
-        return ""
-    parts: list[str] = []
-    for tool in tools:
-        desc = tool.get_description()
-        prompt = tool.get_prompt()
-        if desc or prompt:
-            lines = [f"## {tool.name}"]
-            if desc:
-                lines.append(desc)
-            if prompt:
-                lines.append(prompt)
-            parts.append("\n".join(lines))
-    return "\n\n".join(parts)
 
 
 # --- Assembly ---
