@@ -12,8 +12,6 @@ import os
 import platform
 import shutil
 import tempfile
-from pathlib import Path
-from typing import Any
 
 logger = logging.getLogger(__name__)
 

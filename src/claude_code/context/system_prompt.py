@@ -12,7 +12,6 @@ import logging
 import os
 import platform
 from pathlib import Path
-from typing import Any
 
 from claude_code.context.git_context import load_git_context
 from claude_code.context.user_context import load_user_context

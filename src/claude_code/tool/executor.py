@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from claude_code.tool.base import Tool, ToolResult, ToolUseContext
+from claude_code.tool.base import Tool, ToolUseContext
 from claude_code.types.message import ToolResultBlock
 
 logger = logging.getLogger(__name__)

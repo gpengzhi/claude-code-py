@@ -8,7 +8,6 @@ matching the TS version's 'context: fork' behavior.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from pydantic import BaseModel, Field
 

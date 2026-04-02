@@ -5,11 +5,8 @@ Maps to src/tools/BashTool/BashTool.tsx in the TypeScript codebase.
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import os
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel, Field
 

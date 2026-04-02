@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
 
 from claude_code.tool.base import Tool, ToolUseContext
 from claude_code.tool.executor import execute_tool

@@ -6,7 +6,6 @@ Maps to src/tools/FileWriteTool/FileWriteTool.ts in the TypeScript codebase.
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 
 from pydantic import BaseModel, Field

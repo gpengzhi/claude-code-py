@@ -43,11 +43,6 @@ class PermissionRuleValue(BaseModel):
     rule_content: str | None = None
 
 
-class PermissionRule(BaseModel):
-    source: PermissionRuleSource
-    rule_behavior: PermissionBehavior
-    rule_value: PermissionRuleValue
-
 
 # Permission decisions
 class PermissionAllowDecision(BaseModel):

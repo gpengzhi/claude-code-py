@@ -98,18 +98,6 @@ class ProgressMessage(BaseModel):
 Message = UserMessage | AssistantMessage | SystemMessage | ProgressMessage
 
 
-# Stream events yielded by the query loop
-class StreamRequestStart(BaseModel):
-    type: Literal["stream_request_start"] = "stream_request_start"
-
-
-class StreamEvent(BaseModel):
-    """Raw SSE event from the Anthropic API."""
-
-    type: Literal["stream_event"] = "stream_event"
-    event: dict[str, Any] = Field(default_factory=dict)
-
-
 # Usage tracking
 class Usage(BaseModel):
     input_tokens: int = 0

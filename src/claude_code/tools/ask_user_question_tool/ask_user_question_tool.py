@@ -5,7 +5,6 @@ Maps to src/tools/AskUserQuestionTool/AskUserQuestionTool.ts in the TypeScript c
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Optional
 

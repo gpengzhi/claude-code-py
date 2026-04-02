@@ -14,7 +14,7 @@ from typing import Any
 
 import aiohttp
 
-from claude_code.hooks.config import HookMatcher, parse_hooks_config
+from claude_code.hooks.config import HookMatcher
 from claude_code.hooks.events import HookEvent
 
 logger = logging.getLogger(__name__)

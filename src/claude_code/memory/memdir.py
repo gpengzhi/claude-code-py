@@ -14,7 +14,6 @@ from typing import Any
 import yaml
 
 from claude_code.memory.paths import (
-    ensure_memory_dir,
     get_memory_dir,
     get_memory_index_path,
     is_auto_memory_enabled,

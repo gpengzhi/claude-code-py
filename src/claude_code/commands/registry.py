@@ -180,7 +180,6 @@ async def cmd_config(**kwargs: Any) -> CommandResult:
 async def cmd_doctor(**kwargs: Any) -> CommandResult:
     """Run diagnostics."""
     import shutil
-    from pathlib import Path
     from claude_code.utils.config import get_claude_home
 
     lines = ["claude-code-py diagnostics:"]

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from pathlib import Path
 from typing import Any
 
 from textual.app import ComposeResult
@@ -22,7 +21,7 @@ from claude_code.tui.widgets.message_list import MessageList
 from claude_code.tui.widgets.prompt_input import PromptInput, PromptSubmitted
 from claude_code.tui.widgets.spinner import Spinner
 from claude_code.tui.widgets.status_bar import StatusBar
-from claude_code.types.message import AssistantMessage, TextBlock, ThinkingBlock, ToolUseBlock
+from claude_code.types.message import AssistantMessage, ThinkingBlock, ToolUseBlock
 from claude_code.utils.session_storage import generate_session_id, save_message, load_session
 
 logger = logging.getLogger(__name__)

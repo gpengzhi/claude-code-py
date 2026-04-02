@@ -8,14 +8,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from claude_code.types.permissions import PermissionMode, ToolPermissionContext
+from claude_code.types.permissions import ToolPermissionContext
 
 
 class AppState(BaseModel):
-    """The complete application state.
-
-    Uses Pydantic's model_copy(update=...) for immutable updates.
-    """
+    """The complete application state."""
 
     # Settings
     verbose: bool = False
@@ -47,8 +44,3 @@ class AppState(BaseModel):
 def get_default_app_state(**overrides: object) -> AppState:
     """Create a default AppState, optionally with overrides."""
     return AppState(**overrides)  # type: ignore[arg-type]
-
-
-def update_app_state(state: AppState, **updates: object) -> AppState:
-    """Create a new AppState with the given updates (immutable update)."""
-    return state.model_copy(update=updates)

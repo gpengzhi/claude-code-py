@@ -14,7 +14,6 @@ from claude_code.types.permissions import (
     PermissionAllowDecision,
     PermissionAskDecision,
     PermissionDenyDecision,
-    PermissionMode,
     PermissionResult,
     PermissionRuleValue,
     ToolPermissionContext,
