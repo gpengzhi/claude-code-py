@@ -1,5 +1,7 @@
-"""Spinner widget -- activity indicator during model calls.
+"""Spinner widget -- activity indicator with real-time elapsed time.
 
+Inspired by Claude Code's SpinnerAnimationRow which recomputes elapsed
+time from Date.now() on every 50ms render cycle.
 """
 
 from __future__ import annotations
@@ -15,8 +17,23 @@ from rich.text import Text
 SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
 
+def _format_duration(ms: float) -> str:
+    """Format milliseconds into human-readable duration."""
+    seconds = int(ms / 1000)
+    if seconds < 60:
+        return f"{seconds}s"
+    minutes = seconds // 60
+    secs = seconds % 60
+    return f"{minutes}m {secs}s"
+
+
 class Spinner(Widget):
-    """Animated spinner with real-time elapsed time."""
+    """Animated spinner with real-time elapsed time counter.
+
+    Elapsed time is recomputed from wall clock on every render (not stored
+    in state), matching Claude Code's approach. The timer fires every 200ms
+    to drive re-renders.
+    """
 
     DEFAULT_CSS = """
     Spinner {
@@ -34,54 +51,59 @@ class Spinner(Widget):
         self._frame = 0
         self._start_time: float = 0.0
         self._timer = None
-        self._visible = False
+        self._is_visible = False
 
     def compose(self):
         yield Static("", id="spinner-content")
 
     def show(self, text: str = "Thinking...") -> None:
-        """Show the spinner with given text."""
+        """Show the spinner. Resets elapsed time."""
         self._text = text
         self._start_time = time.monotonic()
         self._frame = 0
-        if not self._visible:
-            self._visible = True
+        if not self._is_visible:
+            self._is_visible = True
             self.add_class("visible")
-            # Single timer — 200ms is fast enough for smooth display
-            # and slow enough to not overwhelm Textual's refresh
-            self._timer = self.set_interval(0.2, self._animate)
+        # Always ensure timer is running
+        if self._timer is None:
+            self._timer = self.set_interval(0.2, self._tick)
+        self._render_frame()
 
     def hide(self) -> None:
-        """Hide the spinner."""
-        if self._visible:
-            self._visible = False
+        """Hide the spinner and stop the timer."""
+        if self._is_visible:
+            self._is_visible = False
             self.remove_class("visible")
-            if self._timer:
-                self._timer.stop()
-                self._timer = None
+        if self._timer is not None:
+            self._timer.stop()
+            self._timer = None
 
     def update_text(self, text: str) -> None:
-        """Update the spinner text without resetting timer."""
+        """Update status text without resetting elapsed time."""
         self._text = text
         self._render_frame()
 
-    def _animate(self) -> None:
-        """Advance the spinner animation and force screen refresh."""
+    def _tick(self) -> None:
+        """Timer callback — advance animation frame and refresh."""
+        if not self._is_visible:
+            return
         self._frame = (self._frame + 1) % len(SPINNER_FRAMES)
         self._render_frame()
-        self.refresh()
 
     def _render_frame(self) -> None:
-        """Render the current spinner frame with elapsed time."""
+        """Render spinner with elapsed time recomputed from wall clock."""
         try:
             content = self.query_one("#spinner-content", Static)
-            elapsed = time.monotonic() - self._start_time
+
+            # Elapsed time recomputed from wall clock every render
+            elapsed_ms = (time.monotonic() - self._start_time) * 1000
+            elapsed_str = _format_duration(elapsed_ms)
             frame_char = SPINNER_FRAMES[self._frame]
 
             text = Text()
             text.append(f"  {frame_char} ", style="bold #cba6f7")
             text.append(self._text, style="#cba6f7")
-            text.append(f"  ({elapsed:.1f}s)", style="#6c7086")
+            text.append(f"  {elapsed_str}", style="#6c7086")
 
             content.update(text)
         except Exception:
