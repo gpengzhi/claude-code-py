@@ -120,7 +120,7 @@ Each chapter's code builds on the previous one. The final result is the complete
 
 ## Design Principles
 
-These principles guided both the original Claude Code and this reimplementation:
+These principles guide production AI coding agents:
 
 1. **Tools return errors, never crash.** A "file not found" error lets the model try a different path. An exception kills the session.
 

@@ -1,6 +1,6 @@
 # Build Claude Code From Scratch in Python
 
-> We studied the architecture of Claude Code and rebuilt it in ~8,600 lines of clean Python -- designed to teach how production AI coding agents work, and usable as a real tool.
+> An open-source Python implementation of an AI coding agent inspired by [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) -- ~8,600 lines of clean Python, designed to teach how production AI coding agents work.
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
@@ -19,7 +19,7 @@ while True:
 
 Real-world agents like [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) have 500,000+ lines on top of this loop. **What are all those lines doing?**
 
-This project answers that question -- with ~8,600 lines of working Python that you can read, run, and modify. Every module maps to the original Claude Code architecture. Every design decision is explained in the [7-chapter tutorial](docs/tutorial/).
+This project answers that question -- with ~8,600 lines of working Python that you can read, run, and modify. Every design decision is explained in the [7-chapter tutorial](docs/tutorial/).
 
 ## Quick Start
 

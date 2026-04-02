@@ -320,7 +320,7 @@ Markdown files in `.claude/skills/` that become `/skill-name` commands.
 
 Intentionally omitted to keep the codebase focused:
 
-- **Security classifiers**: Claude Code's auto-mode uses a classifier to approve/deny tools. We use rule-based permission modes instead.
+- **Security classifiers**: Production agents may use a classifier to auto-approve/deny tools. We use rule-based permission modes instead.
 - **Telemetry**: No analytics or event logging.
 - **OAuth flow**: No browser-based authentication. API key auth only.
 - **MCP HTTP transport**: Only stdio transport is implemented. HTTP/SSE transport is not yet supported.
