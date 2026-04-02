@@ -22,21 +22,26 @@ class MessageList(VerticalScroll):
         self._streaming_widget: Static | None = None
 
     def compose(self) -> ComposeResult:
+        import os
+        from pathlib import Path
+
+        cwd = Path.cwd()
+        model = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+
         header = Text()
-        header.append("╭─────────────────────────────────────────────╮\n", style="#585b70")
-        header.append("│  ", style="#585b70")
-        header.append("◆ claude-code-py", style="bold #cba6f7")
-        header.append(" v0.1.0", style="#6c7086")
-        header.append("                    │\n", style="#585b70")
-        header.append("│  ", style="#585b70")
-        header.append("/help", style="bold #a6e3a1")
-        header.append(" for help  ", style="#6c7086")
-        header.append("Ctrl+C", style="bold #a6e3a1")
-        header.append(" interrupt  ", style="#6c7086")
-        header.append("Ctrl+D", style="bold #a6e3a1")
-        header.append(" quit", style="#6c7086")
-        header.append("  │\n", style="#585b70")
-        header.append("╰─────────────────────────────────────────────╯", style="#585b70")
+        header.append("  ◆ ", style="bold #cba6f7")
+        header.append("claude-code-py", style="bold #cdd6f4")
+        header.append(" v0.1.0\n", style="#6c7086")
+        header.append("    ", style="")
+        header.append(str(cwd), style="#6c7086")
+        header.append("\n\n", style="")
+        header.append("    ", style="")
+        header.append("/help", style="#a6e3a1")
+        header.append(" for help ", style="#585b70")
+        header.append(" Ctrl+C", style="#a6e3a1")
+        header.append(" interrupt ", style="#585b70")
+        header.append(" Ctrl+D", style="#a6e3a1")
+        header.append(" quit", style="#585b70")
         yield Static(header, classes="message-row")
 
     def add_user_message(self, text: str) -> None:
