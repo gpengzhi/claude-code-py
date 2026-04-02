@@ -1,6 +1,5 @@
 """Permission checking -- the full permission pipeline.
 
-Maps to src/utils/permissions/permissions.ts in the TypeScript codebase.
 Implements rule matching, mode-based behavior, and permission resolution.
 """
 
@@ -85,7 +84,7 @@ def has_permissions_to_use_tool(
 ) -> PermissionResult:
     """Check if a tool use is allowed by the permission system.
 
-    Maps to hasPermissionsToUseTool() in the TS codebase.
+    Check if a tool use is allowed by the permission system..
     Decision flow:
     1. Check always-deny rules → deny
     2. Check always-allow rules → allow

@@ -1,6 +1,5 @@
 """Git utilities.
 
-Maps to git-related utilities in the TypeScript codebase.
 Provides git status, branch info, and other git operations.
 """
 

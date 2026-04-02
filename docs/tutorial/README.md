@@ -137,7 +137,7 @@ These principles guided both the original Claude Code and this reimplementation:
 ## FAQ
 
 **Q: Is this actually how Claude Code works?**
-A: Yes. The architecture is based on studying Claude Code's structure. The same patterns (agentic loop, tool protocol, context assembly, security checks) are faithfully implemented. Tool schemas and behavioral patterns match the TypeScript original.
+A: Yes. The architecture mirrors Claude Code's publicly documented behavior. The same patterns (agentic loop, tool protocol, context assembly, security checks) are faithfully implemented.
 
 **Q: Can I use this for real work?**
 A: Yes. It has real sandboxed bash execution, real file editing with encoding detection, real permission scoping, and real MCP integration. It's both an educational reference and a usable tool.

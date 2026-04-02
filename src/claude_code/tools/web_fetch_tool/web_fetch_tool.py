@@ -1,6 +1,5 @@
 """WebFetchTool -- Fetch URL content and process it.
 
-Maps to src/tools/WebFetchTool/WebFetchTool.ts in the TypeScript codebase.
 """
 
 from __future__ import annotations

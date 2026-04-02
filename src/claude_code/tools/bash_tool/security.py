@@ -1,6 +1,5 @@
 """Bash security checks.
 
-Maps to src/tools/BashTool/bashSecurity.ts in the TypeScript codebase.
 Implements 15 named security checks that detect dangerous command patterns.
 """
 

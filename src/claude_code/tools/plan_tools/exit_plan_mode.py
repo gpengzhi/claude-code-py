@@ -1,6 +1,5 @@
 """ExitPlanModeTool -- Exit plan mode and return to code mode.
 
-Maps to the plan mode system in the TypeScript codebase.
 """
 
 from __future__ import annotations

@@ -1,6 +1,5 @@
 """Error handling and retry logic for API calls.
 
-Maps to error handling in src/services/api/ in the TypeScript codebase.
 """
 
 from __future__ import annotations

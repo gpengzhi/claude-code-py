@@ -1,6 +1,5 @@
 """Core model query and streaming.
 
-Maps to src/services/api/claude.ts in the TypeScript codebase.
 Handles the actual API call, SSE streaming, and message assembly.
 """
 
@@ -77,7 +76,6 @@ CACHE_CONTROL_EPHEMERAL = {"type": "ephemeral"}
 def build_system_prompt_blocks(system_prompt: str) -> list[dict[str, Any]]:
     """Convert system prompt string to cache-annotated text blocks.
 
-    Maps to buildSystemPromptBlocks/splitSysPromptPrefix in the TS codebase.
     Places a cache_control breakpoint on the last system block so the entire
     system prompt is eligible for caching.
     """
@@ -98,7 +96,6 @@ def add_cache_breakpoint_to_messages(
 ) -> list[dict[str, Any]]:
     """Add a cache_control breakpoint to the last message.
 
-    Maps to addCacheBreakpoints() in the TS codebase.
     Places exactly one cache_control marker on the last message's last content block.
     """
     if not messages:

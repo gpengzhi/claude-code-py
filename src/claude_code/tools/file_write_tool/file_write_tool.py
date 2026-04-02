@@ -1,6 +1,5 @@
 """FileWriteTool -- Write/create files.
 
-Maps to src/tools/FileWriteTool/FileWriteTool.ts in the TypeScript codebase.
 """
 
 from __future__ import annotations

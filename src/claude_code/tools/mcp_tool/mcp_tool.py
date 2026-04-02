@@ -1,6 +1,5 @@
 """MCP Tool wrapper -- wraps MCP server tools as native tools.
 
-Maps to the MCP tool integration in the TypeScript codebase.
 Allows tools discovered from MCP servers to be used like built-in tools.
 """
 

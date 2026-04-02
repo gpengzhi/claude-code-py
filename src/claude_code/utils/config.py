@@ -1,6 +1,5 @@
 """Configuration system -- multi-source settings.
 
-Maps to src/utils/settings/ in the TypeScript codebase.
 Settings are merged from multiple sources in precedence order:
   defaults < global (~/.claude/settings.json) < project (.claude/settings.json) < CLI flags
 """

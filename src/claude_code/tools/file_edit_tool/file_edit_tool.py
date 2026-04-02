@@ -1,6 +1,5 @@
 """FileEditTool -- Edit existing files via old_string/new_string replacement.
 
-Maps to src/tools/FileEditTool/FileEditTool.ts in the TypeScript codebase.
 Supports encoding detection, line-ending preservation, and quote normalization.
 """
 

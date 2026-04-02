@@ -1,6 +1,5 @@
 """Message types.
 
-Maps to the internal Message types and SDK message types from the TypeScript codebase.
 These are the core message types that flow through the query engine.
 """
 

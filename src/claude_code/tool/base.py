@@ -1,6 +1,5 @@
 """Tool base abstraction.
 
-Maps to src/Tool.ts in the TypeScript codebase.
 Defines the Tool protocol, ToolUseContext, ToolResult, and build_tool() factory.
 """
 
@@ -35,7 +34,7 @@ class ToolResult(BaseModel):
 class ToolUseContext:
     """Dependency-injection bag for tool execution.
 
-    Maps to ToolUseContext in the TypeScript codebase.
+    Passed to every tool's call() method.
     Passed to every tool's call() method.
     """
 

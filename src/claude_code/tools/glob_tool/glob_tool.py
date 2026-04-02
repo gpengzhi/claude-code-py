@@ -1,6 +1,5 @@
 """GlobTool -- File pattern matching.
 
-Maps to src/tools/GlobTool/GlobTool.ts in the TypeScript codebase.
 """
 
 from __future__ import annotations

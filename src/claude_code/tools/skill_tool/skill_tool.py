@@ -1,8 +1,7 @@
 """SkillTool -- invokes skills via a sub-agent.
 
-Maps to src/tools/SkillTool/SkillTool.ts in the TypeScript codebase.
 Loads the skill body and executes it as a system prompt on a sub-agent,
-matching the TS version's 'context: fork' behavior.
+matching a sub-agent pattern.
 """
 
 from __future__ import annotations

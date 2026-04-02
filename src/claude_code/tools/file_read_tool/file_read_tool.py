@@ -1,6 +1,5 @@
 """FileReadTool -- Read file contents.
 
-Maps to src/tools/FileReadTool/FileReadTool.ts in the TypeScript codebase.
 Supports text files, PDFs, images, and Jupyter notebooks.
 """
 

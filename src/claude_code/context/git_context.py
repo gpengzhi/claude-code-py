@@ -1,6 +1,5 @@
 """Git context -- git status for system prompt.
 
-Maps to src/context.ts getSystemContext() in the TypeScript codebase.
 Provides git information (branch, status, recent commits) for the system prompt.
 """
 

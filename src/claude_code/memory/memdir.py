@@ -1,6 +1,5 @@
 """Memory directory management.
 
-Maps to src/memdir/memdir.ts in the TypeScript codebase.
 Manages the persistent file-based memory system.
 """
 

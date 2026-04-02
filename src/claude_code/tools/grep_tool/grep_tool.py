@@ -1,6 +1,5 @@
 """GrepTool -- Content search via ripgrep.
 
-Maps to src/tools/GrepTool/GrepTool.ts in the TypeScript codebase.
 """
 
 from __future__ import annotations

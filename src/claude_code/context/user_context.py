@@ -1,6 +1,5 @@
 """User context -- CLAUDE.md file loading.
 
-Maps to src/context.ts getUserContext() in the TypeScript codebase.
 Loads CLAUDE.md files from the hierarchy: home > project > cwd.
 """
 
@@ -62,7 +61,7 @@ def find_claude_md_files(cwd: Path) -> list[tuple[str, Path]]:
 def load_user_context(cwd: Path) -> str:
     """Load and combine all CLAUDE.md files into user context.
 
-    Maps to getUserContext() in the TypeScript codebase.
+    Load user context from CLAUDE.md files..
     """
     files = find_claude_md_files(cwd)
     if not files:

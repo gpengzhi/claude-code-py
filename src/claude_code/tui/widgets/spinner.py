@@ -1,6 +1,5 @@
 """Spinner widget -- activity indicator during model calls.
 
-Maps to src/components/Spinner.tsx in the TypeScript codebase.
 """
 
 from __future__ import annotations

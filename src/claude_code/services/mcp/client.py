@@ -1,6 +1,5 @@
 """MCP client -- connects to MCP servers and invokes tools.
 
-Maps to src/services/mcp/client.ts in the TypeScript codebase.
 Supports stdio and HTTP transports for the Model Context Protocol.
 """
 

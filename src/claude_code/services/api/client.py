@@ -1,6 +1,5 @@
 """Anthropic API client wrapper.
 
-Maps to src/services/api/client.ts in the TypeScript codebase.
 Handles client creation for different providers (direct API, Bedrock, Vertex).
 """
 

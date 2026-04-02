@@ -1,7 +1,6 @@
 """Task tools -- in-memory task tracking for agentic workflows.
 
-Maps to src/tools/TaskCreateTool, TaskGetTool, TaskUpdateTool, TaskListTool
-in the TypeScript codebase. Consolidated into a single module.
+Consolidated into a single module.
 """
 
 from __future__ import annotations

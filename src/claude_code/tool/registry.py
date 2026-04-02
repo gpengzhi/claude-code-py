@@ -1,6 +1,5 @@
 """Tool registry.
 
-Maps to src/tools.ts in the TypeScript codebase.
 Registers all built-in tools and provides lookup functions.
 """
 
@@ -14,7 +13,7 @@ from claude_code.tool.base import Tool
 def get_all_base_tools() -> list[Tool]:
     """Get all built-in tools.
 
-    Maps to getAllBaseTools() in the TypeScript codebase.
+    Get all built-in tools.
     """
     from claude_code.tools.bash_tool.bash_tool import BashTool
     from claude_code.tools.file_edit_tool.file_edit_tool import FileEditTool

@@ -1,6 +1,5 @@
 """Message list widget -- displays conversation messages.
 
-Maps to src/components/Messages.tsx and VirtualMessageList in the TypeScript codebase.
 """
 
 from __future__ import annotations

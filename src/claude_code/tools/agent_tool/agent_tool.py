@@ -1,6 +1,5 @@
 """AgentTool -- Spawn sub-agents for complex tasks.
 
-Maps to src/tools/AgentTool/AgentTool.ts in the TypeScript codebase.
 """
 
 from __future__ import annotations

@@ -1,6 +1,5 @@
 """Slash command registry.
 
-Maps to src/commands.ts in the TypeScript codebase.
 Each command is a simple async function registered by name.
 """
 

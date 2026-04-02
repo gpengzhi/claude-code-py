@@ -1,6 +1,5 @@
 """Prompt input widget -- text input with history and submission.
 
-Maps to src/components/PromptInput/PromptInput.tsx in the TypeScript codebase.
 """
 
 from __future__ import annotations

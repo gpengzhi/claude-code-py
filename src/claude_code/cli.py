@@ -1,6 +1,5 @@
 """CLI entry point.
 
-Maps to src/main.tsx and src/entrypoints/cli.tsx in the TypeScript codebase.
 Uses Click for argument parsing (replacing Commander.js).
 """
 

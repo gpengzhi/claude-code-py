@@ -1,6 +1,5 @@
 """Auto-compact -- automatic conversation compaction.
 
-Maps to src/services/compact/ in the TypeScript codebase.
 Detects when the conversation is approaching token limits and compacts messages.
 """
 

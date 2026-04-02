@@ -1,6 +1,5 @@
 """Query engine -- manages conversation state across turns.
 
-Maps to src/QueryEngine.ts in the TypeScript codebase.
 Owns the message history, usage tracking, and orchestrates the query loop.
 """
 

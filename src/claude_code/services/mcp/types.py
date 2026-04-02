@@ -1,6 +1,5 @@
 """MCP types.
 
-Maps to src/services/mcp/types.ts in the TypeScript codebase.
 """
 
 from __future__ import annotations

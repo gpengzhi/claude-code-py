@@ -1,6 +1,5 @@
 """Skill loader -- discovers and loads skill markdown files.
 
-Maps to src/skills/loadSkillsDir.ts in the TypeScript codebase.
 Skills are Markdown files with YAML frontmatter in .claude/skills/ directories.
 """
 

@@ -1,6 +1,5 @@
 """Session storage -- conversation persistence.
 
-Maps to src/utils/sessionStorage.ts in the TypeScript codebase.
 Saves/loads conversations as JSONL files for resume support.
 """
 

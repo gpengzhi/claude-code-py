@@ -1,6 +1,5 @@
 """Bash sandbox -- restrict command execution.
 
-Maps to src/utils/sandbox/ in the TypeScript codebase.
 Supports macOS sandbox-exec (seatbelt) and Linux bubblewrap.
 """
 

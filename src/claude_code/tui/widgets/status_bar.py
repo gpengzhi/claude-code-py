@@ -1,6 +1,5 @@
 """Status bar widget -- bottom bar showing model, cost, tokens.
 
-Maps to src/components/StatusLine.tsx in the TypeScript codebase.
 """
 
 from __future__ import annotations

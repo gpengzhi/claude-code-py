@@ -1,6 +1,5 @@
 """Streaming tool executor -- starts tools while model is still streaming.
 
-Maps to src/services/tools/StreamingToolExecutor.ts in the TypeScript codebase.
 When a tool_use block completes during streaming, we can start executing it
 immediately instead of waiting for the full response.
 """

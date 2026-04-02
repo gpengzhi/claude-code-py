@@ -1,6 +1,5 @@
 """Hook configuration parsing.
 
-Maps to src/schemas/hooks.ts in the TypeScript codebase.
 Parses hook definitions from settings.json.
 """
 

@@ -1,6 +1,5 @@
 """Tool executor -- the execution pipeline.
 
-Maps to src/services/tools/toolExecution.ts in the TypeScript codebase.
 Handles: input parsing -> validation -> PreToolUse hooks -> permission check -> call -> PostToolUse hooks -> result.
 """
 
@@ -27,7 +26,7 @@ async def execute_tool(
 ) -> ToolResultBlock:
     """Execute a single tool with full pipeline.
 
-    Pipeline matches the TS version:
+    Pipeline:
     1. Parse input (Pydantic validation)
     2. Custom validation (tool.validate_input)
     3. Run PreToolUse hooks

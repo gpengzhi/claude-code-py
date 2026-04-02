@@ -1,8 +1,6 @@
 """Query loop -- the core agentic loop.
 
-Maps to src/query.ts in the TypeScript codebase.
 Implements the while(true) loop of: call model -> run tools -> append results -> repeat.
-Includes recovery paths matching the TS version:
 - Auto-compact when approaching context limit
 - max_output_tokens recovery (resume mid-thought)
 - Tool result budget truncation
@@ -32,7 +30,7 @@ TOOL_RESULT_BUDGET_CHARS = 800_000  # ~200K tokens
 def apply_tool_result_budget(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Truncate oversized tool results in older messages to fit budget.
 
-    Maps to applyToolResultBudget() in the TS codebase.
+    Truncate oversized tool results in older messages to fit budget..
     Walks messages from newest to oldest, tracking total chars.
     When budget is exceeded, replaces old tool results with stubs.
     """

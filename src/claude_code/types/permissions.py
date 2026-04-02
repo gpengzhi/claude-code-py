@@ -1,6 +1,5 @@
 """Permission types.
 
-Maps to src/types/permissions.ts in the TypeScript codebase.
 """
 
 from __future__ import annotations

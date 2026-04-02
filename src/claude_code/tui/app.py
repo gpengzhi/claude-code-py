@@ -1,6 +1,5 @@
 """Main Textual application.
 
-Maps to the App + REPL screen composition from the TypeScript codebase.
 This is the root Textual App that manages the TUI lifecycle.
 """
 

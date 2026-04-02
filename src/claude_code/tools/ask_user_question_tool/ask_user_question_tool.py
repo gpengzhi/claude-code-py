@@ -1,6 +1,5 @@
 """AskUserQuestionTool -- Ask the user a question.
 
-Maps to src/tools/AskUserQuestionTool/AskUserQuestionTool.ts in the TypeScript codebase.
 """
 
 from __future__ import annotations

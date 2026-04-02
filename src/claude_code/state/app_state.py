@@ -1,6 +1,5 @@
 """Application state.
 
-Maps to src/state/AppStateStore.ts in the TypeScript codebase.
 Central application state that flows through the entire system.
 """
 
@@ -34,7 +33,7 @@ class AppState(BaseModel):
     mcp_clients: dict = Field(default_factory=dict)
     mcp_tools: list = Field(default_factory=list)
 
-    # Tasks (mutable by design, matching TS codebase)
+    # Tasks (mutable by design)
     tasks: dict = Field(default_factory=dict)
 
     # UI

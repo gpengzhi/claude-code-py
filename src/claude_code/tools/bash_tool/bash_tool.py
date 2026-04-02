@@ -1,6 +1,5 @@
 """BashTool -- Execute shell commands.
 
-Maps to src/tools/BashTool/BashTool.tsx in the TypeScript codebase.
 """
 
 from __future__ import annotations

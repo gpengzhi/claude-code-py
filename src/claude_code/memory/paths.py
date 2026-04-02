@@ -1,6 +1,5 @@
 """Memory directory paths.
 
-Maps to src/memdir/paths.ts in the TypeScript codebase.
 Resolves memory directory locations based on project root.
 """
 

@@ -1,7 +1,5 @@
 """System prompt builder.
 
-Maps to src/constants/prompts.ts in the TypeScript codebase.
-Assembles the full system prompt from sections matching the TS version's structure.
 """
 
 from __future__ import annotations
@@ -241,7 +239,7 @@ async def build_system_prompt(
     memory_prompt: str = "",
     model: str = "",
 ) -> str:
-    """Build the complete system prompt matching the TS version's structure.
+    """Build the complete system prompt for the Claude API.
 
     Assembly order matches TS getSystemPrompt():
     1. Intro

@@ -1,6 +1,5 @@
 """REPL screen -- main interactive conversation screen.
 
-Maps to src/screens/REPL.tsx in the TypeScript codebase.
 This is the central hub that connects the query engine to the TUI widgets.
 """
 

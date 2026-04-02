@@ -1,6 +1,5 @@
 """Hook runner -- executes hooks.
 
-Maps to hook execution logic in the TypeScript codebase.
 Supports command (shell), prompt (LLM), and http (webhook) hook types.
 """
 

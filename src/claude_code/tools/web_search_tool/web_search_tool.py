@@ -1,6 +1,5 @@
 """WebSearchTool -- search the web via DuckDuckGo.
 
-Maps to src/tools/WebSearchTool/WebSearchTool.ts in the TypeScript codebase.
 Uses DuckDuckGo (no API key required) instead of Anthropic's server-side search.
 """
 

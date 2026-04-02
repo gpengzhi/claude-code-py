@@ -1,6 +1,5 @@
 """Hook events.
 
-Maps to hook events from src/schemas/hooks.ts and src/types/hooks.ts.
 Defines all hook event types that can be triggered during tool execution.
 """
 
