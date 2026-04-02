@@ -74,8 +74,8 @@ class QueryEngine:
 
         app_state.tool_permission_context = ToolPermissionContext(
             mode=permission_mode,
-            always_allow_rules={"settings": allow_rules} if allow_rules else {},
-            always_deny_rules={"settings": deny_rules} if deny_rules else {},
+            always_allow_rules={"userSettings": allow_rules} if allow_rules else {},
+            always_deny_rules={"userSettings": deny_rules} if deny_rules else {},
         )
 
     def abort(self) -> None:
