@@ -90,8 +90,16 @@ def classify_error(error: Exception) -> APIError:
         elif code and code >= 500:
             return ServerError(error_str, code)
 
-    if "rate" in error_str.lower() and "limit" in error_str.lower():
+    # Match by error message for non-SDK exceptions
+    lower = error_str.lower()
+    if "rate" in lower and "limit" in lower:
         return RateLimitError(error_str)
+    if any(kw in lower for kw in ("overloaded", "529", "capacity")):
+        return ServerError(error_str, 529)
+    if any(kw in lower for kw in ("server error", "internal server", "502", "503")):
+        return ServerError(error_str, 500)
+    if any(kw in lower for kw in ("connection", "timeout", "timed out", "connect")):
+        return APIError(error_str, error_type="connection", retryable=True)
 
     return APIError(error_str)
 
