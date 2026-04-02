@@ -58,6 +58,7 @@ class QueryEngine:
             tools=self.tools,
             abort_event=self.abort_event,
             permission_callback=permission_callback,
+            model=self.model,
         )
         # Set permission mode and rules on app state
         from claude_code.types.permissions import ToolPermissionContext, PermissionRuleValue

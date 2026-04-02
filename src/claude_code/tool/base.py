@@ -46,6 +46,7 @@ class ToolUseContext:
     read_file_state: dict[str, Any] = field(default_factory=dict)
     agent_id: str | None = None
     agent_type: str | None = None
+    model: str = ""  # Parent engine's model — used by sub-agents
     # Async callback for permission "ask" decisions; if None, defaults to deny
     permission_callback: PermissionCallback | None = None
     # Async callback for AskUserQuestion: receives (formatted_question) -> user_response_str

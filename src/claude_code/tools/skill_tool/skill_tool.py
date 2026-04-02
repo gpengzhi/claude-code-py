@@ -76,7 +76,7 @@ class SkillTool(Tool):
             from claude_code.query.engine import QueryEngine
 
             engine = QueryEngine(
-                model=skill.get("model") or "claude-sonnet-4-20250514",
+                model=skill.get("model") or context.model or "claude-sonnet-4-20250514",
                 system_prompt=f"You are executing the skill '{args.skill}'.\n\n{skill_body}",
                 tools=skill_tools,
                 cwd=context.cwd,

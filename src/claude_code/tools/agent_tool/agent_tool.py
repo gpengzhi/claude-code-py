@@ -64,7 +64,7 @@ class AgentTool(Tool):
         try:
             from claude_code.query.engine import QueryEngine
 
-            model = args.model or "claude-sonnet-4-20250514"
+            model = args.model or context.model or "claude-sonnet-4-20250514"
 
             # Create an isolated sub-agent with its own message history
             engine = QueryEngine(
