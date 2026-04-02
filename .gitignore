@@ -13,3 +13,11 @@ build/
 .venv/
 venv/
 env/
+
+# Secrets -- never commit these
+.env
+.env.*
+*.pem
+*.key
+credentials*
+oauth_token.json
