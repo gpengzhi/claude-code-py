@@ -1,6 +1,6 @@
-# Build Production-Level Claude Code in Python
+# Build Claude Code From Scratch in Python
 
-> We studied the architecture of Claude Code and rebuilt it in ~8,800 lines of Python so you can understand every system, every edge case, and every design decision that makes a production AI coding agent work.
+> We studied the architecture of Claude Code and rebuilt it in ~8,500 lines of clean Python -- designed to teach how production AI coding agents work, and usable as a real tool.
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
